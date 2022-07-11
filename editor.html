@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <link rel="stylesheet" href="/editor.css">
+        <script src="/editor.js"></script>
+    </head>
+    <body>
+        <div id="map"> </div>
+
+        <div id="pano"> </div>
+
+        <div id="right">
+            <div id="right-map">
+                <div>
+                    <div>
+                        <label for="mapID"> Enter map ID: </label>
+                    </div>
+                    <div>
+                        <input id="mapID" size="24">
+                        <button id="open-map-button"> Open </button>
+                    </div>
+                </div>
+                <div>
+                    <div>
+                        <label for="name"> Map name: </label>
+                    </div>
+                    <div>
+                        <input id="name" size="40">
+                    </div>
+                </div>
+                <div>
+                    <div>
+                        <label for="description"> Map description: </label>
+                    </div>
+                    <div>
+                        <textarea id="description" cols="50" rows="8"></textarea>
+                    </div>
+                </div>
+                <div>
+                    <div style="display:inline-block">
+                        <div>
+                            <label for="regions"> Map regions: </label>
+                        </div>
+                        <div>
+                            <textarea id="regions"></textarea>
+                        </div>
+                    </div>
+                    <div style="display:inline-block">
+                        <div>
+                            <label for="avatar"> Map avatar: </label>
+                        </div>
+                        <div>
+                            <textarea id="avatar"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div>
+                        <input id="published" type="checkbox">
+                        <label for="published"> Visible to others? </label>
+                        <input id="highlighted" type="checkbox">
+                        <label for="highlighted"> Highlight? </label>
+                    </div>
+                    <div>
+                        <span> Location count: </span>
+                        <span id="count"> 0 </span>
+                    </div>
+                    <div>
+                        <button id="save-map" disabled> Save map </button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="right-location">
+                <div>
+                    <label for="time-machine-temp"> Time machine: </label>
+                    <select id="time-machine-temp" disabled></select>
+                </div>
+                <div>
+                    <div>
+                        <label for="panoid"> Panorama ID: </label>
+                    </div>
+                    <div>
+                        <input id="panoid" size="22">
+                    </div>
+                    <div>
+                        <input id="lock-panoid" type="checkbox">
+                        <label for="lock-panoid"> Lock Pano ID </label>
+                    </div>
+                </div>
+                <div>
+                    <div>
+                        <label> Position metadata for active pano: </label>
+                    </div>
+                    <div>
+                        <input type="number" id="sv-lat" disabled>
+                        <input type="number" id="sv-lng" disabled>
+                    </div>
+                </div>
+                <div>
+                    <input id="pos-override" type="checkbox">
+                    <label for="pos-override"> Override pano-provided position </span>
+                </div>
+                <div>
+                    <div>
+                        <label> Position (defaults to stored value): </label>
+                    </div>
+                    <div>
+                        <input type="number" id="set-lat" step="any">
+                        <input type="number" id="set-lng" step="any">
+                        <button id="select-override" disabled> ⌖ </button>
+                    </div>
+                </div>
+                <div>
+                    <button id="save-loc" disabled> Save location </button>
+                    <button id="del-loc" disabled> Delete location </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="pos-override-popup" style="display: none;">
+            <div id="override-popup-undermap" class="override-popup-layer"> </div>
+            <div id="override-popup-map" class="override-popup-layer"> </div>
+            <button id="override-popup-cancel"> Cancel and exit </button>
+            <div id="override-popup-underlay-controls">
+                <button id="override-popup-init-underlay"> Enable and align underlay </button>
+                <button id = "override-popup-swap"> Swap layer order </button>
+                <input id="override-popup-fg-slider" type="range" min=0 max=1 step="any" disabled>
+            </div>
+        </div>
+    </body>
+</html>

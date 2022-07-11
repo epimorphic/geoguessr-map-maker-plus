@@ -1,0 +1,42 @@
+{
+  "manifest_version": 2,
+  "name": "Map Maker+",
+  "version": "0.2.0",
+
+  "description": "",
+
+  "icons": {
+    "48": "add_location_alt_FILL0_wght700_GRAD0_opsz48.svg",
+    "96": "add_location_alt_FILL0_wght700_GRAD0_opsz48.svg"
+  },
+
+  "permissions": [
+    "scripting",
+    "storage",
+    "unlimitedStorage",
+    "cookies",
+    "https://www.geoguessr.com/*"
+  ],
+
+  "content_security_policy": "script-src 'self' https://maps.googleapis.com; object-src 'self'",
+  
+  "options_ui": {
+    "page": "options.html"
+  },
+
+  "browser_action": {
+    "default_icon": "add_location_alt_FILL0_wght700_GRAD0_opsz48.svg",
+    "default_title": "Open Map Maker+"
+  },
+
+  "background": {
+    "scripts": [
+      "background.js"
+    ]
+  },
+
+  "content_scripts": [],
+
+  "web_accessible_resources": []
+}
+  
