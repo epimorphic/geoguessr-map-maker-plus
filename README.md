@@ -14,7 +14,6 @@ You'll need to provide your own API key for the Google Maps JavaScript API. To s
     - In certain cases _\*cough\*_ where you want to correct the location using the satellite map but it's offset from the standard vector map, you can even independently move and overlay the two.
 
 ## To do
-- [ ] Show save request resolution and timestamp on page
 - [ ] Draw marker for current location on position override map
 - [ ] Draw labels on top of the Street View coverage layer
 - [ ] Draw transit layer

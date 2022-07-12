@@ -347,6 +347,27 @@ function open_map() {
                     ).then(
                         (response) => {
                             console.log(response);
+                            const span = document.getElementById("save-status");
+                            span.textContent = "";
+
+                            if(response.status == 200) {
+                                span.className = "success";
+                                span.textContent = `Saved successfully at ${(new Date(response.headers.get("date"))).toLocaleString("sv")}`;
+                            }
+                            else {
+                                span.className = "failure";
+                                span.textContent = `status code ${response.status}`;
+                            }
+
+                            e.target.disabled = false;
+                        },
+
+                        (failure_reason) => {
+                            const span = document.getElementById("save-status");
+                            span.textContent = "";
+                            span.className = "failure";
+                            span.textContent = `Failed (${failure_reason})`;
+
                             e.target.disabled = false;
                         }
                     );

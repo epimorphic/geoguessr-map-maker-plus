@@ -34,6 +34,14 @@ body {
     font-family: monospace;
 }
 
+#save-status.success {
+    color: rgba(0,255,0,.6);
+}
+
+#save-status.failure {
+    color: rgba(255,51,51,.8);
+}
+
 #right input[type="number"] {
     -moz-appearance: textfield;
 }
