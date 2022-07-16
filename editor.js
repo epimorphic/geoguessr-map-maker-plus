@@ -179,9 +179,9 @@ function open_map() {
             );
 
             document.getElementById("name").value = data.name;
-            document.getElementById("description").textContent = data.description;
-            document.getElementById("regions").textContent = JSON.stringify(data.regions);
-            document.getElementById("avatar").textContent = JSON.stringify(data.avatar);
+            document.getElementById("description").value = data.description;
+            document.getElementById("regions").value = JSON.stringify(data.regions);
+            document.getElementById("avatar").value = JSON.stringify(data.avatar);
             document.getElementById("published").checked = data.published;
             document.getElementById("highlighted").checked = data.highlighted;
 
@@ -377,9 +377,9 @@ function open_map() {
                     const json = new Object();
                     json.name = document.getElementById("name").value;
                     json.customCoordinates = Array.from(locs.values());
-                    json.regions = JSON.parse(document.getElementById("regions").textContent);
-                    json.description = document.getElementById("description").textContent;
-                    json.avatar = JSON.parse(document.getElementById("avatar").textContent);
+                    json.regions = JSON.parse(document.getElementById("regions").value);
+                    json.description = document.getElementById("description").value;
+                    json.avatar = JSON.parse(document.getElementById("avatar").value);
                     json.published = document.getElementById("published").checked;
                     json.highlighted = document.getElementById("highlighted").checked;
                     
