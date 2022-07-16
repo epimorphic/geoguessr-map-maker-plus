@@ -125,7 +125,56 @@ function open_map() {
                     zoom: 1,
                     draggableCursor: "crosshair",
                     streetViewControl: false,
-                    clickableIcons: false
+                    clickableIcons: false,
+                    styles: [
+                        {
+                            elementType: "labels",
+                            stylers: [
+                                { visibility: "off" }
+                            ]
+                        }
+                    ]
+                }
+            );
+            
+            // Calling overlayMapTypes.push directly in this promise 
+            // failed to put the labels layer above the Street View 
+            // coverage layer, even when the call is placed at the end, 
+            // long after the StreetViewCoverageLayer.setMap call.
+            //
+            // So we set up a proxy on overlayMapTypes to wait for the 
+            // Street View coverage layer to be pushed first.
+            map.overlayMapTypes = new Proxy(
+                map.overlayMapTypes,
+                {
+                    set(target, prop, value, receiver) {
+                        if(prop == "length" && value == 1) {
+                            target.length = 1;
+                            target.push(
+                                new google.maps.StyledMapType(
+                                    [
+                                        {
+                                            stylers: [
+                                                { visibility: "off" }
+                                            ]
+                                        },
+                                        {
+                                            elementType: "labels",
+                                            stylers: [
+                                                { visibility: "on" }
+                                            ]
+                                        }
+                                    ],
+                                    {
+                                        name: "Labels"
+                                    }
+                                )
+                            );
+                        }
+                        else {
+                            Reflect.set(target, prop, value);
+                        }
+                    }
                 }
             );
 
