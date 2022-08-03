@@ -185,6 +185,16 @@ function open_map() {
             document.getElementById("published").checked = data.published;
             document.getElementById("highlighted").checked = data.highlighted;
 
+            // TransitLayer isn't actually a separate layer -- it's drawn
+            // into the base map tiles. The featureType "transit" in
+            // StyledMapType unfortunately only covers features present
+            // on the vanilla map, mostly physical, above-ground rail lines,
+            // in that thin gray style except in certain parts of Asia;
+            // ferry and aerial lift routes presumably; and station/stop
+            // labels. So I don't think we can draw transit lines above
+            // StreetViewCoverageLayer.
+            (new google.maps.TransitLayer()).setMap(map);
+
             (new google.maps.StreetViewCoverageLayer()).setMap(map);
 
             for(let [key, loc] of locs) {

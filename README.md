@@ -16,7 +16,7 @@ You'll need to provide your own API key for the Google Maps JavaScript API. To s
 ## To do
 - [ ] Draw marker for current location on position override map
 - [ ] Draw labels on top of the Street View coverage layer
-- [ ] Draw transit layer
+- [x] Draw transit layer
 - [ ] Other cosmetic improvements
 
 - [ ] Make storage.local the primary data store instead of GeoGuessr's server(s), to allow flexibility in what can be stored across edit sessions (such as saving the position override preference).
