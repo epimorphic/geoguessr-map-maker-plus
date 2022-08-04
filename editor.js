@@ -26,17 +26,46 @@ window.onload = () => {
                 console.log("welp");
             }
         }
-    )
+    );
+
+    document.getElementById("guides").style.setProperty(
+        "--physical-pixel-size",
+        `calc(1px / ${window.devicePixelRatio})`
+    );
 }
 
 
 
 function open_map() {
-    pano = new google.maps.StreetViewPanorama(
-        document.getElementById("pano")
-    );
+    const pano_div = document.getElementById("pano");
+
+    pano = new google.maps.StreetViewPanorama(pano_div);
 
     svs = new google.maps.StreetViewService();
+
+    const pano_guide_toggle_div = document.createElement("div");
+    const pano_guide_toggle_button = document.createElement("button");
+    pano_guide_toggle_button.className = "pano-control";
+    pano_guide_toggle_button.innerText = "Toggle guides";
+    pano_guide_toggle_button.addEventListener(
+        "click",
+        () => {
+            pano_guide_toggle_button.disabled = true;
+            const guides = pano_div.querySelector("#guides");
+            if(guides.moved == null) {
+                guides.moved = true;
+                pano_div.querySelector('div[aria-label="Map"]').after(
+                    guides
+                );
+            }
+            guides.hidden = !(guides.hidden);
+            pano_guide_toggle_button.disabled = false;
+        }
+    );
+    pano_guide_toggle_div.append(pano_guide_toggle_button);
+    pano.controls[google.maps.ControlPosition.BOTTOM_LEFT].push(
+        pano_guide_toggle_div
+    );
 
     // If pano ID changes, update corresponding field and update list of panoramas taken at this location over time
     pano.addListener(
