@@ -8,7 +8,43 @@
     <body>
         <div id="map"> </div>
 
-        <div id="pano"> </div>
+        <div id="pano"> 
+            <div id="guides" hidden>
+                <!-- 
+                    At any fixed zoom level, the vertical FoV is fixed, not
+                    depending on the div height at all. The horizontal FoV
+                    is then directly tied to the aspect ratio of the div.
+                    So vertically we've been freed to be able to think
+                    about the rule of thirds, while horizontally there
+                    remains the more important matter of showing what's
+                    even visible at narrower aspect ratios.
+                 -->
+
+                <div class="guide-normal guide-horizontal upper-3rd"></div>
+                <div class="guide-normal guide-horizontal lower-3rd"></div>
+
+                <!-- 10:7 is the aspect ratio from the default editor. -->
+                <div class="guide-normal guide-vertical _10-7-left"></div>
+                <div class="guide-normal guide-vertical _10-7-right"></div>
+                <div class="guide-normal guide-vertical _4-3-left"></div>
+                <div class="guide-normal guide-vertical _4-3-right"></div>
+
+                <div class="guide-diff guide-horizontal upper-3rd"></div>
+                <div class="guide-diff guide-horizontal lower-3rd"></div>
+
+                <div class="guide-diff guide-vertical _10-7-left"></div>
+                <div class="guide-diff guide-vertical _10-7-right"></div>
+                <div class="guide-diff guide-vertical _4-3-left"></div>
+                <div class="guide-diff guide-vertical _4-3-right"></div>
+
+                <div class="reticle reticle-outer reticle-horizontal"></div>
+                <div class="reticle reticle-outer reticle-vertical"></div>
+
+                <div class="reticle reticle-inner reticle-horizontal"></div>
+                <div class="reticle reticle-inner reticle-vertical"></div>
+            </div>
+        </div>
+        
 
         <div id="right">
             <div id="right-map">

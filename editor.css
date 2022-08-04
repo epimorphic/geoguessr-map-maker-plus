@@ -5,8 +5,140 @@ body {
 }
 
 #map, #pano {
-    height: 50%; aspect-ratio: 16 / 9;
+    height: 50%;
+    aspect-ratio: 16 / 9;
     background: none !important;
+}
+
+.pano-control {
+    
+}
+
+#guides {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    pointer-events: none;
+    --physical-pixel-size: 1px;
+    --stripe-width: calc(5 * var(--physical-pixel-size));
+}
+
+.guide-normal, .guide-diff, .reticle {
+    position: absolute;
+}
+
+.guide-diff {
+    mix-blend-mode: difference;
+}
+
+.guide-normal.guide-vertical, .guide-normal.reticle-vertical {
+    background-image: repeating-linear-gradient(
+        black, 
+        black var(--stripe-width), 
+        white var(--stripe-width), 
+        white calc(2*var(--stripe-width)),
+        transparent calc(2*var(--stripe-width)),
+        transparent calc(3*var(--stripe-width))
+    );
+}
+
+.guide-normal.guide-horizontal, .guide-normal.reticle-horizontal {
+    background-image: repeating-linear-gradient(
+        90deg,
+        black, 
+        black var(--stripe-width), 
+        white var(--stripe-width), 
+        white calc(2*var(--stripe-width)),
+        transparent calc(2*var(--stripe-width)),
+        transparent calc(3*var(--stripe-width))
+    );
+}
+
+.guide-diff.guide-vertical, .guide-diff.reticle-vertical {
+    background-image: repeating-linear-gradient(
+        transparent, 
+        transparent calc(2*var(--stripe-width)),
+        white calc(2*var(--stripe-width)),
+        white calc(3*var(--stripe-width))
+    );
+}
+
+.guide-diff.guide-horizontal, .guide-diff.reticle-horizontal {
+    background-image: repeating-linear-gradient(
+        90deg,
+        transparent, 
+        transparent calc(2*var(--stripe-width)),
+        white calc(2*var(--stripe-width)),
+        white calc(3*var(--stripe-width))
+    );
+}
+
+.guide-horizontal {
+    left: 0;
+    height: var(--physical-pixel-size);
+    width: 100%;
+}
+
+.upper-3rd {
+    top: calc(100% / 3 -  var(--physical-pixel-size) / 2);
+}
+
+.lower-3rd {
+    bottom: calc(100% / 3 -  var(--physical-pixel-size) / 2);
+}
+
+.guide-vertical {
+    top: 0;
+    width: var(--physical-pixel-size);
+    height: 100%;
+}
+
+._10-7-left {
+    left: calc((100% * (1 - 9/16 * 10/7) - var(--physical-pixel-size)) / 2);
+}
+
+._10-7-right {
+    right: calc((100% * (1 - 9/16 * 10/7) - var(--physical-pixel-size)) / 2);
+}
+
+._4-3-left {
+    left: calc((100% * (1 - 9/16 * 4/3) - var(--physical-pixel-size)) / 2);
+}
+
+._4-3-right {
+    right: calc((100% * (1 - 9/16 * 4/3) - var(--physical-pixel-size)) / 2);
+}
+
+.reticle {
+    --reticle-length: calc(16 * var(--physical-pixel-size));
+    --reticle-thickness: calc(2 * var(--physical-pixel-size));
+}
+
+.reticle-outer {
+    background: transparent;
+    outline: black solid var(--physical-pixel-size);
+}
+
+.reticle-inner {
+    background: white;
+    mix-blend-mode: difference;
+}
+
+.reticle-horizontal {
+    left: calc(50% - var(--reticle-length) / 2);
+    top: calc(50% - var(--reticle-thickness) / 2);
+    width: var(--reticle-length);
+    height: var(--reticle-thickness);
+}
+
+.reticle-vertical {
+    left: calc(50% - var(--reticle-thickness) / 2);
+    top: calc(50% - var(--reticle-length) / 2);
+    width: var(--reticle-thickness);
+    height: var(--reticle-length);
 }
 
 #right {
