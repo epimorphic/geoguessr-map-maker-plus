@@ -4,6 +4,7 @@ let mapID;
 let locs;
 let active_loc_key, active_marker;
 let next_key;
+let locs_added = new Map(), locs_modified = new Map(), deleted_count = 0;
 
 window.onload = () => {
     browser.storage.local.get("Ak").then(
@@ -320,6 +321,12 @@ function open_map() {
                         }
                     );
 
+                    if( !locs_added.has(active_loc_key) && 
+                        !locs_modified.has(active_loc_key) ) {
+                        locs_modified.set(active_loc_key, null);
+                        document.getElementById("count-modified").textContent = `🗘${locs_modified.size}`;
+                    }
+
                     e.target.disabled = false;
                 }
             );
@@ -330,16 +337,27 @@ function open_map() {
                     e.target.disabled = true;
                     document.getElementById("save-loc").disabled = true;
                     document.getElementById("select-override").disabled = true;
+                    active_marker.setMap(null);
+                    active_marker = null;
+                    const time_machine_menu = document.getElementById("time-machine-temp");
+                    time_machine_menu.disabled = true;
                     
                     locs.delete(active_loc_key);
                     document.getElementById("count").textContent = `${locs.size}`;
-                    active_marker.setMap(null);
-                    active_marker = null;
+                    if(locs_added.has(active_loc_key)) {
+                        locs_added.delete(active_loc_key);
+                        document.getElementById("count-added").textContent = `+${locs_added.size}`;
+                    }
+                    else {
+                        if(locs_modified.has(active_loc_key)) {
+                            locs_modified.delete(active_loc_key);
+                            document.getElementById("count-modified").textContent = `🗘${locs_modified.size}`;
+                        }
+                        document.getElementById("count-deleted").textContent = `−${++deleted_count}`;
+                    }
                     
                     pano.setVisible(false);
                     
-                    const time_machine_menu = document.getElementById("time-machine-temp");
-                    time_machine_menu.disabled = true;
                     time_machine_menu.innerHTML = "";
                     document.getElementById("panoid").value = "";
                     document.getElementById("lock-panoid").checked = false;
@@ -382,6 +400,14 @@ function open_map() {
                             if(response.status == 200) {
                                 span.className = "success";
                                 span.textContent = `Saved successfully at ${(new Date(response.headers.get("date"))).toLocaleString("sv")}`;
+
+                                locs_added = new Map();
+                                locs_modified = new Map();
+                                deleted_count = 0;
+                                const changes_div = document.getElementById("changes");
+                                changes_div.querySelector("#count-added").textContent = "+0";
+                                changes_div.querySelector("#count-deleted").textContent = "−0";
+                                changes_div.querySelector("#count-modified").textContent = "🗘0";
                             }
                             else {
                                 span.className = "failure";
@@ -432,7 +458,9 @@ function create_loc_if_exists(e) {
 
                 const key = next_key++;
                 locs.set(key, constructed_loc);
+                locs_added.set(key, null);
                 document.getElementById("count").textContent = `${locs.size}`;
+                document.getElementById("count-added").textContent = `+${locs_added.size}`;
                 open_location(create_marker(key, constructed_loc));
             }
         }
