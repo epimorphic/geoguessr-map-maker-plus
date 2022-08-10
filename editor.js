@@ -7,6 +7,8 @@ let next_key;
 let locs_added = new Map(), locs_modified = new Map(), deleted_count = 0;
 
 window.onload = () => {
+    const mapID_input = document.getElementById("mapID");
+
     browser.storage.local.get("Ak").then(
         (ob) => {
             if(ob.Ak != null) {
@@ -18,7 +20,7 @@ window.onload = () => {
                     "click",
                     (e) => {
                         e.target.disabled = true;
-                        mapID = document.getElementById("mapID").value;
+                        mapID = mapID_input.value;
                         open_map();
                     }
                 );
@@ -28,6 +30,18 @@ window.onload = () => {
             }
         }
     );
+    
+    const urlrx = /https:\/\/www\.geoguessr\.com\/(?:maps|map-maker)\/([0-9a-f]{24})/;
+    mapID_input.addEventListener(
+        "paste",
+        (e) => {
+            const match = e.clipboardData.getData("text").match(urlrx);
+            if(match != null) {
+                e.preventDefault();
+                mapID_input.value = match[1];
+            }
+        }
+    )
 
     document.getElementById("guides").style.setProperty(
         "--physical-pixel-size",
