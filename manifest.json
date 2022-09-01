@@ -37,6 +37,12 @@
 
   "content_scripts": [],
 
-  "web_accessible_resources": []
+  "web_accessible_resources": [],
+
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "gg.map.maker.plus@epimorphic"
+    }
+  }
 }
   
