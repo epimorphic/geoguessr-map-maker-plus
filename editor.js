@@ -1,4 +1,5 @@
 let map, pano, svs;
+let labels_overlay_layer;
 let override_selection_map, override_undermap;
 let mapID;
 let locs;
@@ -194,26 +195,28 @@ function open_map() {
                     set(target, prop, value, receiver) {
                         if(prop == "length" && value == 1) {
                             target.length = 1;
-                            target.push(
-                                new google.maps.StyledMapType(
-                                    [
-                                        {
-                                            stylers: [
-                                                { visibility: "off" }
-                                            ]
-                                        },
-                                        {
-                                            elementType: "labels",
-                                            stylers: [
-                                                { visibility: "on" }
-                                            ]
-                                        }
-                                    ],
+                            
+                            labels_overlay_layer = new google.maps.StyledMapType(
+                                [
                                     {
-                                        name: "Labels"
+                                        stylers: [
+                                            { visibility: "off" }
+                                        ]
+                                    },
+                                    {
+                                        elementType: "labels",
+                                        stylers: [
+                                            { visibility: "on" }
+                                        ]
                                     }
-                                )
+                                ],
+                                {
+                                    name: "Labels"
+                                }
                             );
+                            target.push(labels_overlay_layer);
+
+                            map.overlayMapTypes = target;
                         }
                         else {
                             Reflect.set(target, prop, value);
@@ -221,13 +224,6 @@ function open_map() {
                     }
                 }
             );
-
-            document.getElementById("name").value = data.name;
-            document.getElementById("description").value = data.description;
-            document.getElementById("regions").value = JSON.stringify(data.regions);
-            document.getElementById("avatar").value = JSON.stringify(data.avatar);
-            document.getElementById("published").checked = data.published;
-            document.getElementById("highlighted").checked = data.highlighted;
 
             // TransitLayer isn't actually a separate layer -- it's drawn
             // into the base map tiles. The featureType "transit" in
@@ -240,6 +236,84 @@ function open_map() {
             (new google.maps.TransitLayer()).setMap(map);
 
             (new google.maps.StreetViewCoverageLayer()).setMap(map);
+
+            const view_options_control = document.createElement("div");
+            view_options_control.className = "map-control";
+
+            const view_options_head = document.createElement("div");
+            view_options_head.className = "map-control-mimic";
+            view_options_head.textContent = "Options";
+            view_options_control.append(view_options_head);
+
+            const view_options_body = document.createElement("div");
+            view_options_body.id = "map-options-popup";
+            view_options_body.className = "map-control-hover";
+            view_options_body.style.display = "none";
+            const labels_layer_option = document.createElement("div");
+            const labels_layer_checkbox = document.createElement("input");
+            labels_layer_checkbox.type = "checkbox";
+            labels_layer_checkbox.checked = true;
+            labels_layer_checkbox.id = "labels-in-top-layer";
+            const labels_layer_checkbox_label = document.createElement("label");
+            labels_layer_checkbox_label.htmlFor = "labels-in-top-layer";
+            labels_layer_checkbox_label.textContent = "Draw labels in a separate layer above StreetViewCoverageLayer";
+            labels_layer_option.append(
+                labels_layer_checkbox,
+                labels_layer_checkbox_label
+            );
+            view_options_body.append(labels_layer_option);
+            view_options_control.append(view_options_body);
+
+            labels_layer_checkbox.addEventListener(
+                "input",
+                (ev) => {
+                    if(ev.target.checked) {
+                        map.setOptions(
+                            {
+                                styles: [
+                                    {
+                                        elementType: "labels",
+                                        stylers: [
+                                            { visibility: "off" }
+                                        ]
+                                    }
+                                ]
+                            }
+                        );
+                        map.overlayMapTypes.push(labels_overlay_layer);
+                    }
+                    else {
+                        map.setOptions(
+                            { styles: [] }
+                        );
+                        map.overlayMapTypes.pop();
+                    }
+                }
+            )
+
+            view_options_head.addEventListener(
+                "mouseenter",
+                () => {
+                    document.getElementById("map-options-popup").style.display = "block";
+                }
+            )
+            view_options_control.addEventListener(
+                "mouseleave",
+                () => {
+                    document.getElementById("map-options-popup").style.display = "none";
+                }
+            )
+
+            map.controls[google.maps.ControlPosition.TOP_LEFT].push(
+                view_options_control
+            );
+
+            document.getElementById("name").value = data.name;
+            document.getElementById("description").value = data.description;
+            document.getElementById("regions").value = JSON.stringify(data.regions);
+            document.getElementById("avatar").value = JSON.stringify(data.avatar);
+            document.getElementById("published").checked = data.published;
+            document.getElementById("highlighted").checked = data.highlighted;
 
             for(let [key, loc] of locs) {
                 create_marker(key, loc);
