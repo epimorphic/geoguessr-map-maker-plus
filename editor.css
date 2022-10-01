@@ -195,15 +195,15 @@ div[id="right"] label, div[id="right"] span {
     font-family: monospace;
 }
 
-#count-added, #save-status.success {
+#changes > .count-added, #save-status.success {
     color: rgba(0,255,0,.6);
 }
 
-#count-deleted, #save-status.failure {
+#changes > .count-deleted, #save-status.failure {
     color: rgba(255,51,51,.8);
 }
 
-#count-modified {
+#changes > .count-modified {
     color: rgba(218, 165, 32, .8);
 }
 

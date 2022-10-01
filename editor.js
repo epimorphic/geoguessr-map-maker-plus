@@ -471,7 +471,7 @@ function open_map() {
                     if( !locs_added.has(active_loc_key) && 
                         !locs_modified.has(active_loc_key) ) {
                         locs_modified.set(active_loc_key, null);
-                        document.getElementById("count-modified").textContent = `🗘${locs_modified.size}`;
+                        update_count_of_changes();
                     }
 
                     e.target.disabled = false;
@@ -493,15 +493,14 @@ function open_map() {
                     document.getElementById("count").textContent = `${locs.size}`;
                     if(locs_added.has(active_loc_key)) {
                         locs_added.delete(active_loc_key);
-                        document.getElementById("count-added").textContent = `+${locs_added.size}`;
                     }
                     else {
                         if(locs_modified.has(active_loc_key)) {
                             locs_modified.delete(active_loc_key);
-                            document.getElementById("count-modified").textContent = `🗘${locs_modified.size}`;
                         }
-                        document.getElementById("count-deleted").textContent = `−${++deleted_count}`;
+                        deleted_count++;
                     }
+                    update_count_of_changes();
                     
                     pano.setVisible(false);
                     
@@ -551,10 +550,8 @@ function open_map() {
                                 locs_added = new Map();
                                 locs_modified = new Map();
                                 deleted_count = 0;
-                                const changes_div = document.getElementById("changes");
-                                changes_div.querySelector("#count-added").textContent = "+0";
-                                changes_div.querySelector("#count-deleted").textContent = "−0";
-                                changes_div.querySelector("#count-modified").textContent = "🗘0";
+
+                                update_count_of_changes()
                             }
                             else {
                                 span.className = "failure";
@@ -607,7 +604,7 @@ function create_loc_if_exists(e) {
                 locs.set(key, constructed_loc);
                 locs_added.set(key, null);
                 document.getElementById("count").textContent = `${locs.size}`;
-                document.getElementById("count-added").textContent = `+${locs_added.size}`;
+                update_count_of_changes();
                 open_location(create_marker(key, constructed_loc));
             }
         }
@@ -684,4 +681,21 @@ function time_machine_option(entry) {
 
 function hide_override_popup() {
     document.getElementById("pos-override-popup").style.display = "none";
+}
+
+function update_count_of_changes() {
+    let h = "";
+    if(locs_added.size > 0) {
+        h = `<span class="count-added">+${locs_added.size}</span> `;
+    }
+    if(deleted_count > 0) {
+        h += `<span class="count-deleted">−${deleted_count}</span> `;
+    }
+    if(locs_modified.size > 0) {
+        h += `<span class="count-modified">🗘${locs_modified.size}</span>`;
+    }
+    if(h == "") {
+        h = "no changes";
+    }
+    document.getElementById("changes").innerHTML = h;
 }
