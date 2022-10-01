@@ -14,7 +14,7 @@ window.onload = () => {
         (ob) => {
             if(ob.Ak != null) {
                 const gm_loader = document.createElement('script');
-                gm_loader.src = `https://maps.googleapis.com/maps/api/js?key=${ob.Ak}`;
+                gm_loader.src = `https://maps.googleapis.com/maps/api/js?key=${ob.Ak}&libraries=visualization`;
                 document.head.appendChild(gm_loader);
 
                 document.getElementById("open-map-button").addEventListener(
