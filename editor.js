@@ -321,7 +321,7 @@ function open_map() {
 
             map.addListener(
                 "click",
-                create_loc_if_exists
+                create_loc_from_map
             );
 
             document.getElementById("select-override").addEventListener(
@@ -576,39 +576,86 @@ function open_map() {
             );
 
             document.getElementById("save-map").disabled = false;
+
+            // PanoID / URL pasting
+            window.addEventListener(
+                'paste',
+                (e) => {
+                    if(e.target.tagName != 'INPUT' && e.target.tagName != 'TEXTAREA') {
+                        const s = e.clipboardData.getData('text');
+                        if(URL.canParse(s)) {
+                            let u = new URL(s);
+                            // google.*
+                            if(/\bgoogle(?:\.\w{2,3}){1,2}$/.test(u.hostname) && u.pathname.startsWith("/maps/")) {
+                                // look between !1s and the next !
+                                // 22 (official), or 44 or 43 (unofficial) chars
+                                create_loc_from_panoid(/(?<=!1s)[\w-]{22}(?:[\w-]{21}[\w-]?)??(?=!)/.exec(u.pathname)[0]);
+                            }
+                        }
+                        else {
+                            if(
+                                (s.length == 22 || s.length == 64 && s.startsWith("CAoS") && s.slice(6,13) == "FGMVFpc")
+                                && !(/[^\w-=]/.test(s))
+                            ) {
+                                create_loc_from_panoid(s);
+                            }
+                        }
+                    }
+                }
+            )
         }
     );
 }
 
-function create_loc_if_exists(e) {
+function create_loc_from_panoid(id) {
+    if(id.length != 22 && id.length != 64) {
+        /*
+         * ID not directly usable; construct protobuf message and encode.
+         * Byte 0: specifies field representing type of pano
+         * Byte 1: code for type of pano, in this case a user-uploaded photosphere
+         * Byte 2: specifies field for ID string
+         * Byte 3: ID string length
+         */
+        id = btoa("\u0008\u000a\u0012" + String.fromCharCode(id.length) + id);
+    }
+    svs.getPanoramaById(id).then(
+        (d, status) => {
+            create_loc_from_svs_response(d, status, id);
+        }
+    );
+}
+
+function create_loc_from_map(e) {
     svs.getPanorama(
         {
             location: e.latLng,
             preference: google.maps.StreetViewPreference.NEAREST
         }
     ).then(
-        (d, status) => {
-            if(d != null) {
-                const retrieved_loc = d.data.location;
-                const latLng = retrieved_loc.latLng;
+        create_loc_from_svs_response
+    );
+}
 
-                const constructed_loc = new Object();
-                constructed_loc.heading = 0;
-                constructed_loc.lat = latLng.lat();
-                constructed_loc.lng = latLng.lng();
-                constructed_loc.panoId = null;
-                constructed_loc.pitch = 0;
-                constructed_loc.zoom = 0;
+function create_loc_from_svs_response(d, status, known_id = null) {
+    if(d != null) {
+        const retrieved_loc = d.data.location;
+        const latLng = retrieved_loc.latLng;
 
-                const key = next_key++;
-                locs.set(key, constructed_loc);
-                locs_added.set(key, null);
-                document.getElementById("count").textContent = `${locs.size}`;
-                update_count_of_changes();
-                open_location(create_marker(key, constructed_loc));
-            }
-        }
-    )
+        const constructed_loc = new Object();
+        constructed_loc.heading = 0;
+        constructed_loc.lat = latLng.lat();
+        constructed_loc.lng = latLng.lng();
+        constructed_loc.panoId = known_id;
+        constructed_loc.pitch = 0;
+        constructed_loc.zoom = 0;
+
+        const key = next_key++;
+        locs.set(key, constructed_loc);
+        locs_added.set(key, null);
+        document.getElementById("count").textContent = `${locs.size}`;
+        update_count_of_changes();
+        open_location(create_marker(key, constructed_loc));
+    }
 }
 
 function create_marker(key, loc) {
