@@ -60,9 +60,13 @@ function open_map() {
     svs = new google.maps.StreetViewService();
 
     const pano_guide_toggle_div = document.createElement("div");
-    const pano_guide_toggle_button = document.createElement("button");
-    pano_guide_toggle_button.className = "pano-control";
-    pano_guide_toggle_button.innerText = "Toggle guides";
+    const pano_guide_toggle_button = Object.assign(
+        document.createElement("button"),
+        {
+            className: "pano-control",
+            innerText: "Toggle guides"
+        }
+    );
     pano_guide_toggle_button.addEventListener(
         "click",
         () => {
@@ -240,23 +244,40 @@ function open_map() {
             const view_options_control = document.createElement("div");
             view_options_control.className = "map-control";
 
-            const view_options_head = document.createElement("div");
-            view_options_head.className = "map-control-mimic";
-            view_options_head.textContent = "Options";
+            const view_options_head = Object.assign(
+                document.createElement("div"),
+                {
+                    className: "map-control-mimic",
+                    textContent: "Options"
+                }
+            );
             view_options_control.append(view_options_head);
 
-            const view_options_body = document.createElement("div");
-            view_options_body.id = "map-options-popup";
-            view_options_body.className = "map-control-hover";
+            const view_options_body = Object.assign(
+                document.createElement("div"),
+                {
+                    id: "map-options-popup",
+                    className: "map-control-hover"
+                }
+            );
             view_options_body.style.display = "none";
+            // console.log(view_options_body.style);
             const labels_layer_option = document.createElement("div");
-            const labels_layer_checkbox = document.createElement("input");
-            labels_layer_checkbox.type = "checkbox";
-            labels_layer_checkbox.checked = true;
-            labels_layer_checkbox.id = "labels-in-top-layer";
-            const labels_layer_checkbox_label = document.createElement("label");
-            labels_layer_checkbox_label.htmlFor = "labels-in-top-layer";
-            labels_layer_checkbox_label.textContent = "Draw labels in a separate layer above StreetViewCoverageLayer";
+            const labels_layer_checkbox = Object.assign(
+                document.createElement("input"),
+                {
+                    type: "checkbox",
+                    checked: true,
+                    id: "labels-in-top-layer"
+                }
+            );
+            const labels_layer_checkbox_label = Object.assign(
+                document.createElement("label"),
+                {
+                    htmlFor: "labels-in-top-layer",
+                    textContent: "Draw labels in a separate layer above StreetViewCoverageLayer"
+                }
+            );
             labels_layer_option.append(
                 labels_layer_checkbox,
                 labels_layer_checkbox_label
@@ -409,13 +430,14 @@ function create_loc_from_svs_response(d, status, known_id = null) {
         const retrieved_loc = d.data.location;
         const latLng = retrieved_loc.latLng;
 
-        const constructed_loc = new Object();
-        constructed_loc.heading = 0;
-        constructed_loc.lat = latLng.lat();
-        constructed_loc.lng = latLng.lng();
-        constructed_loc.panoId = known_id;
-        constructed_loc.pitch = 0;
-        constructed_loc.zoom = 0;
+        const constructed_loc = {
+            lat: latLng.lat(),
+            lng: latLng.lng(),
+            panoId: known_id,
+            heading: 0,
+            pitch: 0,
+            zoom: 0
+        };
 
         const key = next_key++;
         locs.set(key, constructed_loc);
@@ -568,9 +590,13 @@ function open_override_popup_listener(e) {
     const popup = document.getElementById("pos-override-popup");
     popup.querySelector("#override-popup-init-underlay").disabled = false;
     popup.querySelector("#override-popup-swap").disabled = true;
-    const slider = popup.querySelector("#override-popup-fg-slider");
-    slider.value = "1";
-    slider.disabled = true;
+    Object.assign(
+        popup.querySelector("#override-popup-fg-slider"),
+        {
+            value: "1",
+            disabled: true
+        }
+    );
     popup.style.setProperty("--override-popup-fg-opacity", "1");
     const undermap = popup.querySelector("#override-popup-undermap");
     undermap.style.display = "none";
@@ -707,14 +733,15 @@ function delete_loc_listener(e) {
 function save_map_listener(e) {
     e.target.disabled = true;
 
-    const json = new Object();
-    json.name = document.getElementById("name").value;
-    json.customCoordinates = Array.from(locs.values());
-    json.regions = JSON.parse(document.getElementById("regions").value);
-    json.description = document.getElementById("description").value;
-    json.avatar = JSON.parse(document.getElementById("avatar").value);
-    json.published = document.getElementById("published").checked;
-    json.highlighted = document.getElementById("highlighted").checked;
+    const json = {
+        name:              document.getElementById("name").value,
+        customCoordinates: Array.from(locs.values()),
+        regions:           JSON.parse(document.getElementById("regions").value),
+        description:       document.getElementById("description").value,
+        avatar:            JSON.parse(document.getElementById("avatar").value),
+        published:         document.getElementById("published").checked,
+        highlighted:       document.getElementById("highlighted").checked
+    };
     
     fetch(
         `https://www.geoguessr.com/api/v3/profiles/maps/${mapID}`,
@@ -751,10 +778,17 @@ function save_map_listener(e) {
         },
 
         (failure_reason) => {
-            const span = document.getElementById("save-status");
-            span.textContent = "";
-            span.className = "failure";
-            span.textContent = `Failed (${failure_reason})`;
+            // const span = document.getElementById("save-status");
+            // span.textContent = "";
+            // span.className = "failure";
+            // span.textContent = `Failed (${failure_reason})`;
+            Object.assign(
+                document.getElementById("save-status"),
+                {
+                    className: "failure",
+                    textContent: `Failed (${failure_reason})`
+                }
+            );
 
             e.target.disabled = false;
         }
