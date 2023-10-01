@@ -326,101 +326,22 @@ function open_map() {
 
             document.getElementById("select-override").addEventListener(
                 "click",
-                (e) => {
-                    if(override_selection_map == null) {
-                        override_selection_map = new google.maps.Map(
-                            document.getElementById("override-popup-map"),
-                            {
-                                center: map.center,
-                                zoom: map.zoom,
-                                draggableCursor: "crosshair",
-                                streetViewControl: false,
-                                clickableIcons: false
-                            }
-                        );
-                        override_selection_map.addListener(
-                            "click",
-                            (e) => {
-                                hide_override_popup();
-                                document.getElementById("set-lat").value = e.latLng.lat();
-                                document.getElementById("set-lng").value = e.latLng.lng();
-                                document.getElementById("pos-override").checked = true;
-                                document.getElementById("lock-panoid").checked = true;
-                            }
-                        );
-                    }
-                    else {
-                        override_selection_map.setCenter(map.center);
-                        override_selection_map.setZoom(map.zoom);
-                    }
-                    const popup = document.getElementById("pos-override-popup");
-                    popup.querySelector("#override-popup-init-underlay").disabled = false;
-                    popup.querySelector("#override-popup-swap").disabled = true;
-                    const slider = popup.querySelector("#override-popup-fg-slider");
-                    slider.value = "1";
-                    slider.disabled = true;
-                    popup.style.setProperty("--override-popup-fg-opacity", "1");
-                    const undermap = popup.querySelector("#override-popup-undermap");
-                    undermap.style.display = "none";
-                    undermap.className = "override-popup-layer";
-                    popup.querySelector("#override-popup-map").className = "override-popup-layer override-popup-foreground";
-
-                    popup.style.display = "block";
-                }
+                open_override_popup_listener
             );
 
             document.getElementById("override-popup-swap").addEventListener(
                 "click",
-                (e) => {
-                    e.target.disabled = true;
-
-                    const popup = document.getElementById("pos-override-popup");
-                    const layer1 = popup.querySelector("#override-popup-map");
-                    const layer2 = popup.querySelector("#override-popup-undermap");
-                    [layer1.className, layer2.className] = [layer2.className, layer1.className];
-
-                    e.target.disabled = false;
-                }
+                swap_override_popup_layers_listener
             )
 
             document.getElementById("override-popup-init-underlay").addEventListener(
                 "click",
-                (e) => {
-                    e.target.disabled = true;
-
-                    const popup = document.getElementById("pos-override-popup");
-                    const undermap_div = popup.querySelector("#override-popup-undermap");
-
-                    if(override_undermap == null) {
-                        override_undermap = new google.maps.Map(
-                            undermap_div,
-                            {
-                                center: override_selection_map.center,
-                                zoom: override_selection_map.zoom,
-                                streetViewControl: false,
-                                clickableIcons: false
-                            }
-                        )
-                    }
-                    else {
-                        override_undermap.setCenter(override_selection_map.center);
-                        override_undermap.setZoom(override_selection_map.zoom);
-                    }
-
-                    undermap_div.style.display = "block";
-                    popup.querySelector("#override-popup-swap").disabled = false;
-                    popup.querySelector("#override-popup-fg-slider").disabled = false;
-                }
+                enable_underlay_listener
             );
 
             document.getElementById("override-popup-fg-slider").addEventListener(
                 "input",
-                (e) => {
-                    document.getElementById("pos-override-popup").style.setProperty(
-                        "--override-popup-fg-opacity",
-                        e.target.valueAsNumber
-                    )
-                }
+                override_layer_mix_listener
             );
 
             document.getElementById("override-popup-cancel").addEventListener(
@@ -430,149 +351,17 @@ function open_map() {
 
             document.getElementById("save-loc").addEventListener(
                 "click",
-                (e) => {
-                    e.target.disabled = true;
-                    const loc = locs.get(active_loc_key);
-
-                    if(document.getElementById("lock-panoid").checked) {
-                        loc.panoId = pano.getPano();
-                    }
-                    else {
-                        loc.panoId = null;
-                    }
-
-                    if(document.getElementById("pos-override").checked) {
-                        loc.lat = document.getElementById("set-lat").valueAsNumber;
-                        loc.lng = document.getElementById("set-lng").valueAsNumber;
-                    }
-                    else {
-                        const pos = pano.getPosition();
-                        loc.lat = pos.lat();
-                        loc.lng = pos.lng();
-                    }
-
-                    const pov = pano.getPov();
-                    loc.heading = pov.heading;
-                    loc.pitch = pov.pitch;
-                    // zoom quirk: pano.zoom returns 0.16... when set to 0 for some reason
-                    // (though all those values result in the same actual zoom level in the viewer)
-                    loc.zoom = pov.zoom >= 0.17 ? pov.zoom : 0;
-
-                    delete loc.countryCode;
-                    delete loc.stateCode;
-
-                    active_marker.setPosition(
-                        {
-                            lat: loc.lat,
-                            lng: loc.lng
-                        }
-                    );
-
-                    if( !locs_added.has(active_loc_key) && 
-                        !locs_modified.has(active_loc_key) ) {
-                        locs_modified.set(active_loc_key, null);
-                        update_count_of_changes();
-                    }
-
-                    e.target.disabled = false;
-                }
+                save_loc_listener
             );
 
             document.getElementById("del-loc").addEventListener(
                 "click",
-                (e) => {
-                    e.target.disabled = true;
-                    document.getElementById("save-loc").disabled = true;
-                    document.getElementById("select-override").disabled = true;
-                    active_marker.setMap(null);
-                    active_marker = null;
-                    const time_machine_menu = document.getElementById("time-machine-temp");
-                    time_machine_menu.disabled = true;
-                    
-                    locs.delete(active_loc_key);
-                    document.getElementById("count").textContent = `${locs.size}`;
-                    if(locs_added.has(active_loc_key)) {
-                        locs_added.delete(active_loc_key);
-                    }
-                    else {
-                        if(locs_modified.has(active_loc_key)) {
-                            locs_modified.delete(active_loc_key);
-                        }
-                        deleted_count++;
-                    }
-                    update_count_of_changes();
-                    
-                    pano.setVisible(false);
-                    
-                    time_machine_menu.innerHTML = "";
-                    document.getElementById("panoid").value = "";
-                    document.getElementById("lock-panoid").checked = false;
-                    document.getElementById("pos-override").checked = false;
-                    document.getElementById("set-lat").value = NaN;
-                    document.getElementById("set-lng").value = NaN;
-                }
+                delete_loc_listener
             );
 
             document.getElementById("save-map").addEventListener(
                 "click",
-                (e) => {
-                    e.target.disabled = true;
-
-                    const json = new Object();
-                    json.name = document.getElementById("name").value;
-                    json.customCoordinates = Array.from(locs.values());
-                    json.regions = JSON.parse(document.getElementById("regions").value);
-                    json.description = document.getElementById("description").value;
-                    json.avatar = JSON.parse(document.getElementById("avatar").value);
-                    json.published = document.getElementById("published").checked;
-                    json.highlighted = document.getElementById("highlighted").checked;
-                    
-                    fetch(
-                        `https://www.geoguessr.com/api/v3/profiles/maps/${mapID}`,
-                        {
-                            method: 'POST',
-                            body: JSON.stringify(json),
-                            credentials: 'include',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            }
-                        }
-                    ).then(
-                        (response) => {
-                            console.log(response);
-                            const span = document.getElementById("save-status");
-                            span.textContent = "";
-
-                            if(response.status == 200) {
-                                span.className = "success";
-                                span.textContent = `Saved successfully at ${(new Date(response.headers.get("date"))).toLocaleString("sv")}`;
-
-                                locs_added = new Map();
-                                locs_modified = new Map();
-                                deleted_count = 0;
-
-                                update_count_of_changes()
-                            }
-                            else {
-                                span.className = "failure";
-                                span.textContent = `status code ${response.status}`;
-                            }
-
-                            e.target.disabled = false;
-                        },
-
-                        (failure_reason) => {
-                            const span = document.getElementById("save-status");
-                            span.textContent = "";
-                            span.className = "failure";
-                            span.textContent = `Failed (${failure_reason})`;
-
-                            e.target.disabled = false;
-                        }
-                    );
-
-                    
-                }
+                save_map_listener
             );
 
             document.getElementById("save-map").disabled = false;
@@ -580,28 +369,7 @@ function open_map() {
             // PanoID / URL pasting
             window.addEventListener(
                 'paste',
-                (e) => {
-                    if(e.target.tagName != 'INPUT' && e.target.tagName != 'TEXTAREA') {
-                        const s = e.clipboardData.getData('text');
-                        if(URL.canParse(s)) {
-                            let u = new URL(s);
-                            // google.*
-                            if(/\bgoogle(?:\.\w{2,3}){1,2}$/.test(u.hostname) && u.pathname.startsWith("/maps/")) {
-                                // look between !1s and the next !
-                                // 22 (official), or 44 or 43 (unofficial) chars
-                                create_loc_from_panoid(/(?<=!1s)[\w-]{22}(?:[\w-]{21}[\w-]?)??(?=!)/.exec(u.pathname)[0]);
-                            }
-                        }
-                        else {
-                            if(
-                                (s.length == 22 || s.length == 64 && s.startsWith("CAoS") && s.slice(6,13) == "FGMVFpc")
-                                && !(/[^\w-=]/.test(s))
-                            ) {
-                                create_loc_from_panoid(s);
-                            }
-                        }
-                    }
-                }
+                loc_paste_listener
             )
         }
     );
@@ -745,4 +513,250 @@ function update_count_of_changes() {
         h = "no changes";
     }
     document.getElementById("changes").innerHTML = h;
+}
+
+function loc_paste_listener(e) {
+    if(e.target.tagName != 'INPUT' && e.target.tagName != 'TEXTAREA') {
+        const s = e.clipboardData.getData('text');
+        if(URL.canParse(s)) {
+            let u = new URL(s);
+            // google.*
+            if(/\bgoogle(?:\.\w{2,3}){1,2}$/.test(u.hostname) && u.pathname.startsWith("/maps/")) {
+                // look between !1s and the next !
+                // 22 (official), or 44 or 43 (unofficial) chars
+                create_loc_from_panoid(/(?<=!1s)[\w-]{22}(?:[\w-]{21}[\w-]?)??(?=!)/.exec(u.pathname)[0]);
+            }
+        }
+        else {
+            if(
+                (s.length == 22 || s.length == 64 && s.startsWith("CAoS") && s.slice(6,13) == "FGMVFpc")
+                && !(/[^\w-=]/.test(s))
+            ) {
+                create_loc_from_panoid(s);
+            }
+        }
+    }
+}
+
+function open_override_popup_listener(e) {
+    if(override_selection_map == null) {
+        override_selection_map = new google.maps.Map(
+            document.getElementById("override-popup-map"),
+            {
+                center: map.center,
+                zoom: map.zoom,
+                draggableCursor: "crosshair",
+                streetViewControl: false,
+                clickableIcons: false
+            }
+        );
+        override_selection_map.addListener(
+            "click",
+            (e) => {
+                hide_override_popup();
+                document.getElementById("set-lat").value = e.latLng.lat();
+                document.getElementById("set-lng").value = e.latLng.lng();
+                document.getElementById("pos-override").checked = true;
+                document.getElementById("lock-panoid").checked = true;
+            }
+        );
+    }
+    else {
+        override_selection_map.setCenter(map.center);
+        override_selection_map.setZoom(map.zoom);
+    }
+    const popup = document.getElementById("pos-override-popup");
+    popup.querySelector("#override-popup-init-underlay").disabled = false;
+    popup.querySelector("#override-popup-swap").disabled = true;
+    const slider = popup.querySelector("#override-popup-fg-slider");
+    slider.value = "1";
+    slider.disabled = true;
+    popup.style.setProperty("--override-popup-fg-opacity", "1");
+    const undermap = popup.querySelector("#override-popup-undermap");
+    undermap.style.display = "none";
+    undermap.className = "override-popup-layer";
+    popup.querySelector("#override-popup-map").className = "override-popup-layer override-popup-foreground";
+
+    popup.style.display = "block";
+}
+
+function enable_underlay_listener(e) {
+    e.target.disabled = true;
+
+    const popup = document.getElementById("pos-override-popup");
+    const undermap_div = popup.querySelector("#override-popup-undermap");
+
+    if(override_undermap == null) {
+        override_undermap = new google.maps.Map(
+            undermap_div,
+            {
+                center: override_selection_map.center,
+                zoom: override_selection_map.zoom,
+                streetViewControl: false,
+                clickableIcons: false
+            }
+        )
+    }
+    else {
+        override_undermap.setCenter(override_selection_map.center);
+        override_undermap.setZoom(override_selection_map.zoom);
+    }
+
+    undermap_div.style.display = "block";
+    popup.querySelector("#override-popup-swap").disabled = false;
+    popup.querySelector("#override-popup-fg-slider").disabled = false;
+}
+
+function swap_override_popup_layers_listener(e) {
+    e.target.disabled = true;
+
+    const popup = document.getElementById("pos-override-popup");
+    const layer1 = popup.querySelector("#override-popup-map");
+    const layer2 = popup.querySelector("#override-popup-undermap");
+    [layer1.className, layer2.className] = [layer2.className, layer1.className];
+
+    e.target.disabled = false;
+}
+
+function override_layer_mix_listener(e) {
+    document.getElementById("pos-override-popup").style.setProperty(
+        "--override-popup-fg-opacity",
+        e.target.valueAsNumber
+    )
+}
+
+function save_loc_listener(e) {
+    e.target.disabled = true;
+    const loc = locs.get(active_loc_key);
+
+    if(document.getElementById("lock-panoid").checked) {
+        loc.panoId = pano.getPano();
+    }
+    else {
+        loc.panoId = null;
+    }
+
+    if(document.getElementById("pos-override").checked) {
+        loc.lat = document.getElementById("set-lat").valueAsNumber;
+        loc.lng = document.getElementById("set-lng").valueAsNumber;
+    }
+    else {
+        const pos = pano.getPosition();
+        loc.lat = pos.lat();
+        loc.lng = pos.lng();
+    }
+
+    const pov = pano.getPov();
+    loc.heading = pov.heading;
+    loc.pitch = pov.pitch;
+    // zoom quirk: pano.zoom returns 0.16... when set to 0 for some reason
+    // (though all those values result in the same actual zoom level in the viewer)
+    loc.zoom = pov.zoom >= 0.17 ? pov.zoom : 0;
+
+    delete loc.countryCode;
+    delete loc.stateCode;
+
+    active_marker.setPosition(
+        {
+            lat: loc.lat,
+            lng: loc.lng
+        }
+    );
+
+    if( !locs_added.has(active_loc_key) && 
+        !locs_modified.has(active_loc_key) ) {
+        locs_modified.set(active_loc_key, null);
+        update_count_of_changes();
+    }
+
+    e.target.disabled = false;
+}
+
+function delete_loc_listener(e) {
+    e.target.disabled = true;
+    document.getElementById("save-loc").disabled = true;
+    document.getElementById("select-override").disabled = true;
+    active_marker.setMap(null);
+    active_marker = null;
+    const time_machine_menu = document.getElementById("time-machine-temp");
+    time_machine_menu.disabled = true;
+    
+    locs.delete(active_loc_key);
+    document.getElementById("count").textContent = `${locs.size}`;
+    if(locs_added.has(active_loc_key)) {
+        locs_added.delete(active_loc_key);
+    }
+    else {
+        if(locs_modified.has(active_loc_key)) {
+            locs_modified.delete(active_loc_key);
+        }
+        deleted_count++;
+    }
+    update_count_of_changes();
+    
+    pano.setVisible(false);
+    
+    time_machine_menu.innerHTML = "";
+    document.getElementById("panoid").value = "";
+    document.getElementById("lock-panoid").checked = false;
+    document.getElementById("pos-override").checked = false;
+    document.getElementById("set-lat").value = NaN;
+    document.getElementById("set-lng").value = NaN;
+}
+
+function save_map_listener(e) {
+    e.target.disabled = true;
+
+    const json = new Object();
+    json.name = document.getElementById("name").value;
+    json.customCoordinates = Array.from(locs.values());
+    json.regions = JSON.parse(document.getElementById("regions").value);
+    json.description = document.getElementById("description").value;
+    json.avatar = JSON.parse(document.getElementById("avatar").value);
+    json.published = document.getElementById("published").checked;
+    json.highlighted = document.getElementById("highlighted").checked;
+    
+    fetch(
+        `https://www.geoguessr.com/api/v3/profiles/maps/${mapID}`,
+        {
+            method: 'POST',
+            body: JSON.stringify(json),
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        }
+    ).then(
+        (response) => {
+            console.log(response);
+            const span = document.getElementById("save-status");
+            span.textContent = "";
+
+            if(response.status == 200) {
+                span.className = "success";
+                span.textContent = `Saved successfully at ${(new Date(response.headers.get("date"))).toLocaleString("sv")}`;
+
+                locs_added = new Map();
+                locs_modified = new Map();
+                deleted_count = 0;
+
+                update_count_of_changes()
+            }
+            else {
+                span.className = "failure";
+                span.textContent = `status code ${response.status}`;
+            }
+
+            e.target.disabled = false;
+        },
+
+        (failure_reason) => {
+            const span = document.getElementById("save-status");
+            span.textContent = "";
+            span.className = "failure";
+            span.textContent = `Failed (${failure_reason})`;
+
+            e.target.disabled = false;
+        }
+    );
 }
