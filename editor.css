@@ -175,6 +175,8 @@ body {
 
 #right > div {
     height: 50vh;
+    padding: 5px 0 5px 10px;
+    box-sizing: border-box;
 }
 
 /*
