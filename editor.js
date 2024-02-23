@@ -1,58 +1,211 @@
 let map, pano, svs;
 let labels_overlay_layer;
 let override_selection_map, override_undermap;
-let mapID;
-let locs;
+let local_ID;
+let export_targets;
+let locs, locs_extras;
 let active_loc_key, active_marker;
 let next_key;
 let locs_added = new Map(), locs_modified = new Map(), deleted_count = 0;
 
-window.onload = () => {
-    const mapID_input = document.getElementById("mapID");
+/*
+ * Maps API bootstrap loader
+ * https://developers.google.com/maps/documentation/javascript/load-maps-js-api
+ */
+browser.storage.local.get("Ak").then(
+    (items) => {
+        if(items.Ak) {
+            (g=>{var h,a,k,p="The Google Maps JavaScript API",c="google",l="importLibrary",q="__ib__",m=document,b=window;b=b[c]||(b[c]={});var d=b.maps||(b.maps={}),r=new Set,e=new URLSearchParams,u=()=>h||(h=new Promise(async(f,n)=>{await (a=m.createElement("script"));e.set("libraries",[...r]+"");for(k in g)e.set(k.replace(/[A-Z]/g,t=>"_"+t[0].toLowerCase()),g[k]);e.set("callback",c+".maps."+q);a.src=`https://maps.${c}apis.com/maps/api/js?`+e;d[q]=f;a.onerror=()=>h=n(Error(p+" could not load."));a.nonce=m.querySelector("script[nonce]")?.nonce||"";m.head.append(a)}));d[l]?console.warn(p+" only loads once. Ignoring:",g):d[l]=(f,...n)=>r.add(f)&&u().then(()=>d[l](f,...n))})({
+                key: items.Ak,
+                // v: "weekly",
+                // Use the 'v' parameter to indicate the version to use (weekly, beta, alpha, etc.).
+                // Add other bootstrap parameters as needed, using camel case.
+            });
+        }
+        else {
+            alert("API key not found.");
+        }
+    }
+);
 
-    browser.storage.local.get("Ak").then(
-        (ob) => {
-            if(ob.Ak != null) {
-                const gm_loader = document.createElement('script');
-                gm_loader.src = `https://maps.googleapis.com/maps/api/js?key=${ob.Ak}&libraries=visualization`;
-                document.head.appendChild(gm_loader);
+async function editor_setup() {
 
-                document.getElementById("open-map-button").addEventListener(
-                    "click",
-                    (e) => {
-                        e.target.disabled = true;
-                        mapID = mapID_input.value;
-                        open_map();
-                    }
-                );
-            }
-            else {
-                console.log("welp");
+    await google.maps.importLibrary("core");
+    await google.maps.importLibrary("maps");
+    await google.maps.importLibrary("streetView");
+
+    map = new google.maps.Map(
+        document.getElementById("map"),
+        {
+            center: { lat: 0, lng: 0 },
+            zoom: 1,
+            draggableCursor: "crosshair",
+            streetViewControl: false,
+            clickableIcons: false,
+            styles: [
+                {
+                    elementType: "labels",
+                    stylers: [
+                        { visibility: "off" }
+                    ]
+                }
+            ]
+        }
+    );
+
+    /*
+        Calling overlayMapTypes.push directly failed to put the
+        labels layer above the Street View coverage layer, even
+        when the call is placed at the end, long after the 
+        StreetViewCoverageLayer.setMap call.
+        
+        So we set up a proxy on overlayMapTypes to wait for the 
+        Street View coverage layer to be pushed first.
+    */
+    map.overlayMapTypes = new Proxy(
+        map.overlayMapTypes,
+        {
+            set(target, prop, value, receiver) {
+                if(prop == "length" && value == 1) {
+                    target.length = 1;
+                    
+                    labels_overlay_layer = new google.maps.StyledMapType(
+                        [
+                            {
+                                stylers: [
+                                    { visibility: "off" }
+                                ]
+                            },
+                            {
+                                elementType: "labels",
+                                stylers: [
+                                    { visibility: "on" }
+                                ]
+                            }
+                        ],
+                        {
+                            name: "Labels"
+                        }
+                    );
+                    target.push(labels_overlay_layer);
+
+                    map.overlayMapTypes = target;
+                }
+                else {
+                    Reflect.set(target, prop, value);
+                }
             }
         }
     );
-    
-    const urlrx = /https:\/\/www\.geoguessr\.com\/(?:maps|map-maker)\/([0-9a-f]{24})/;
-    mapID_input.addEventListener(
-        "paste",
-        (e) => {
-            const match = e.clipboardData.getData("text").match(urlrx);
-            if(match != null) {
-                e.preventDefault();
-                mapID_input.value = match[1];
+
+    /*
+        TransitLayer isn't actually a separate layer -- it's drawn
+        into the base map tiles. The featureType "transit" in
+        StyledMapType unfortunately only covers features present
+        on the vanilla map, mostly physical, above-ground rail lines,
+        in that thin gray style except in certain parts of Asia;
+        ferry and aerial lift routes presumably; and station/stop
+        labels. So I don't think we can draw transit lines above
+        StreetViewCoverageLayer.
+    */
+    (new google.maps.TransitLayer()).setMap(map);
+
+    (new google.maps.StreetViewCoverageLayer()).setMap(map);
+
+
+    const view_options_control = document.createElement("div");
+    view_options_control.className = "map-control";
+
+    const view_options_head = Object.assign(
+        document.createElement("div"),
+        {
+            className: "map-control-mimic",
+            textContent: "Options"
+        }
+    );
+    view_options_control.append(view_options_head);
+
+    const view_options_body = Object.assign(
+        document.createElement("div"),
+        {
+            id: "map-options-popup",
+            className: "map-control-hover"
+        }
+    );
+    view_options_body.style.display = "none";
+    const labels_layer_option = document.createElement("div");
+    const labels_layer_checkbox = Object.assign(
+        document.createElement("input"),
+        {
+            type: "checkbox",
+            checked: true,
+            id: "labels-in-top-layer"
+        }
+    );
+    const labels_layer_checkbox_label = Object.assign(
+        document.createElement("label"),
+        {
+            htmlFor: "labels-in-top-layer",
+            textContent: "Draw labels in a separate layer above StreetViewCoverageLayer"
+        }
+    );
+    labels_layer_option.append(
+        labels_layer_checkbox,
+        labels_layer_checkbox_label
+    );
+    view_options_body.append(labels_layer_option);
+    view_options_control.append(view_options_body);
+
+    labels_layer_checkbox.addEventListener(
+        "input",
+        (ev) => {
+            if(ev.target.checked) {
+                map.setOptions(
+                    {
+                        styles: [
+                            {
+                                elementType: "labels",
+                                stylers: [
+                                    { visibility: "off" }
+                                ]
+                            }
+                        ]
+                    }
+                );
+                map.overlayMapTypes.push(labels_overlay_layer);
             }
+            else {
+                map.setOptions(
+                    { styles: [] }
+                );
+                map.overlayMapTypes.pop();
+            }
+        }
+    );
+
+    view_options_head.addEventListener(
+        "mouseenter",
+        () => {
+            document.getElementById("map-options-popup").style.display = "block";
+        }
+    )
+    view_options_control.addEventListener(
+        "mouseleave",
+        () => {
+            document.getElementById("map-options-popup").style.display = "none";
         }
     )
 
-    document.getElementById("guides").style.setProperty(
-        "--physical-pixel-size",
-        `calc(1px / ${window.devicePixelRatio})`
+    map.controls[google.maps.ControlPosition.TOP_LEFT].push(
+        view_options_control
     );
-}
+
+    map.addListener(
+        "click",
+        create_loc_from_map
+    );
 
 
-
-function open_map() {
     const pano_div = document.getElementById("pano");
 
     pano = new google.maps.StreetViewPanorama(pano_div);
@@ -137,7 +290,7 @@ function open_map() {
             document.getElementById("sv-lat").value = pos.lat();
             document.getElementById("sv-lng").value = pos.lng();
         }
-    )
+    );
 
     document.getElementById("time-machine-temp").addEventListener(
         "change",
@@ -145,256 +298,95 @@ function open_map() {
             pano.setPano(e.target.value);
             document.getElementById("lock-panoid").checked = true;
         }
+    );
+
+    document.getElementById("select-override").addEventListener(
+        "click",
+        open_override_popup_listener
+    );
+    
+    document.getElementById("override-popup-swap").addEventListener(
+        "click",
+        swap_override_popup_layers_listener
+    )
+    
+    document.getElementById("override-popup-init-underlay").addEventListener(
+        "click",
+        enable_underlay_listener
+    );
+    
+    document.getElementById("override-popup-fg-slider").addEventListener(
+        "input",
+        override_layer_mix_listener
+    );
+    
+    document.getElementById("override-popup-cancel").addEventListener(
+        "click",
+        hide_override_popup
+    );
+    
+    document.getElementById("save-loc").addEventListener(
+        "click",
+        save_loc_listener
+    );
+    
+    document.getElementById("del-loc").addEventListener(
+        "click",
+        delete_loc_listener
+    );
+    
+    document.getElementById("save-map").addEventListener(
+        "click",
+        save_map_listener
+    );
+
+    document.getElementById("editor").addEventListener(
+        "paste",
+        loc_paste_listener
     )
 
-    fetch(
-        `https://www.geoguessr.com/api/v3/profiles/maps/${mapID}`,
-        {
-            method: 'GET',
-            credentials: 'include'
-        }
-    ).then(
-        response => response.json()
-    ).then(
-        (data) => {
+    document.getElementById("editor").setup_finished = true;
+
+}
+
+async function open_map(storage_key) {
+
+    if(document.getElementById("editor").setup_finished != true) {
+        await editor_setup();
+    }
+
+    local_ID = storage_key;
+
+    browser.storage.local.get(local_ID).then(
+        (items) => {
+            const data = items[local_ID];
+
             locs = new Map(
-                data.customCoordinates.map(
-                    (element, index) => {
-                        return [index, element];
+                data.locs.map(
+                    (loc, index) => {
+                        create_marker(index, loc);
+                        return [index, loc];
                     }
                 )
             );
-            next_key = data.customCoordinates.length;
+
+            locs_extras = new Map(
+                data.locs_extras.map(
+                    (element, index) => [index, element]
+                )
+            );
+
+            export_targets = data.export_targets;
+
+            next_key = locs.size;
             document.getElementById("count").textContent = `${next_key}`;
 
-            map = new google.maps.Map(
-                document.getElementById("map"),
-                {
-                    center: { lat: 0, lng: 0 },
-                    zoom: 1,
-                    draggableCursor: "crosshair",
-                    streetViewControl: false,
-                    clickableIcons: false,
-                    styles: [
-                        {
-                            elementType: "labels",
-                            stylers: [
-                                { visibility: "off" }
-                            ]
-                        }
-                    ]
-                }
-            );
-            
-            // Calling overlayMapTypes.push directly in this promise 
-            // failed to put the labels layer above the Street View 
-            // coverage layer, even when the call is placed at the end, 
-            // long after the StreetViewCoverageLayer.setMap call.
-            //
-            // So we set up a proxy on overlayMapTypes to wait for the 
-            // Street View coverage layer to be pushed first.
-            map.overlayMapTypes = new Proxy(
-                map.overlayMapTypes,
-                {
-                    set(target, prop, value, receiver) {
-                        if(prop == "length" && value == 1) {
-                            target.length = 1;
-                            
-                            labels_overlay_layer = new google.maps.StyledMapType(
-                                [
-                                    {
-                                        stylers: [
-                                            { visibility: "off" }
-                                        ]
-                                    },
-                                    {
-                                        elementType: "labels",
-                                        stylers: [
-                                            { visibility: "on" }
-                                        ]
-                                    }
-                                ],
-                                {
-                                    name: "Labels"
-                                }
-                            );
-                            target.push(labels_overlay_layer);
-
-                            map.overlayMapTypes = target;
-                        }
-                        else {
-                            Reflect.set(target, prop, value);
-                        }
-                    }
-                }
-            );
-
-            // TransitLayer isn't actually a separate layer -- it's drawn
-            // into the base map tiles. The featureType "transit" in
-            // StyledMapType unfortunately only covers features present
-            // on the vanilla map, mostly physical, above-ground rail lines,
-            // in that thin gray style except in certain parts of Asia;
-            // ferry and aerial lift routes presumably; and station/stop
-            // labels. So I don't think we can draw transit lines above
-            // StreetViewCoverageLayer.
-            (new google.maps.TransitLayer()).setMap(map);
-
-            (new google.maps.StreetViewCoverageLayer()).setMap(map);
-
-            const view_options_control = document.createElement("div");
-            view_options_control.className = "map-control";
-
-            const view_options_head = Object.assign(
-                document.createElement("div"),
-                {
-                    className: "map-control-mimic",
-                    textContent: "Options"
-                }
-            );
-            view_options_control.append(view_options_head);
-
-            const view_options_body = Object.assign(
-                document.createElement("div"),
-                {
-                    id: "map-options-popup",
-                    className: "map-control-hover"
-                }
-            );
-            view_options_body.style.display = "none";
-            // console.log(view_options_body.style);
-            const labels_layer_option = document.createElement("div");
-            const labels_layer_checkbox = Object.assign(
-                document.createElement("input"),
-                {
-                    type: "checkbox",
-                    checked: true,
-                    id: "labels-in-top-layer"
-                }
-            );
-            const labels_layer_checkbox_label = Object.assign(
-                document.createElement("label"),
-                {
-                    htmlFor: "labels-in-top-layer",
-                    textContent: "Draw labels in a separate layer above StreetViewCoverageLayer"
-                }
-            );
-            labels_layer_option.append(
-                labels_layer_checkbox,
-                labels_layer_checkbox_label
-            );
-            view_options_body.append(labels_layer_option);
-            view_options_control.append(view_options_body);
-
-            labels_layer_checkbox.addEventListener(
-                "input",
-                (ev) => {
-                    if(ev.target.checked) {
-                        map.setOptions(
-                            {
-                                styles: [
-                                    {
-                                        elementType: "labels",
-                                        stylers: [
-                                            { visibility: "off" }
-                                        ]
-                                    }
-                                ]
-                            }
-                        );
-                        map.overlayMapTypes.push(labels_overlay_layer);
-                    }
-                    else {
-                        map.setOptions(
-                            { styles: [] }
-                        );
-                        map.overlayMapTypes.pop();
-                    }
-                }
-            )
-
-            view_options_head.addEventListener(
-                "mouseenter",
-                () => {
-                    document.getElementById("map-options-popup").style.display = "block";
-                }
-            )
-            view_options_control.addEventListener(
-                "mouseleave",
-                () => {
-                    document.getElementById("map-options-popup").style.display = "none";
-                }
-            )
-
-            map.controls[google.maps.ControlPosition.TOP_LEFT].push(
-                view_options_control
-            );
-
-            document.getElementById("name").value = data.name;
-            document.getElementById("description").value = data.description;
-            document.getElementById("regions").value = JSON.stringify(data.regions);
-            document.getElementById("avatar").value = JSON.stringify(data.avatar);
-            document.getElementById("published").checked = data.published;
-            document.getElementById("highlighted").checked = data.highlighted;
-
-            for(let [key, loc] of locs) {
-                create_marker(key, loc);
-            }
-
-            map.addListener(
-                "click",
-                create_loc_from_map
-            );
-
-            document.getElementById("select-override").addEventListener(
-                "click",
-                open_override_popup_listener
-            );
-
-            document.getElementById("override-popup-swap").addEventListener(
-                "click",
-                swap_override_popup_layers_listener
-            )
-
-            document.getElementById("override-popup-init-underlay").addEventListener(
-                "click",
-                enable_underlay_listener
-            );
-
-            document.getElementById("override-popup-fg-slider").addEventListener(
-                "input",
-                override_layer_mix_listener
-            );
-
-            document.getElementById("override-popup-cancel").addEventListener(
-                "click",
-                hide_override_popup
-            );
-
-            document.getElementById("save-loc").addEventListener(
-                "click",
-                save_loc_listener
-            );
-
-            document.getElementById("del-loc").addEventListener(
-                "click",
-                delete_loc_listener
-            );
-
-            document.getElementById("save-map").addEventListener(
-                "click",
-                save_map_listener
-            );
-
-            document.getElementById("save-map").disabled = false;
-
-            // PanoID / URL pasting
-            window.addEventListener(
-                'paste',
-                loc_paste_listener
-            )
+            document.getElementById("editor").hidden = false;
         }
     );
 }
+
+
 
 function create_loc_from_panoid(id) {
     if(id.length != 22 && id.length != 64) {
@@ -441,6 +433,15 @@ function create_loc_from_svs_response(d, status, known_id = null) {
 
         const key = next_key++;
         locs.set(key, constructed_loc);
+        locs_extras.set(
+            key,
+            {
+                lat: latLng.lat(),
+                lng: latLng.lng(),
+                pos_override: false,
+                pano_on_last_save: retrieved_loc.pano
+            }
+        );
         locs_added.set(key, null);
         document.getElementById("count").textContent = `${locs.size}`;
         update_count_of_changes();
@@ -493,7 +494,7 @@ function open_location(marker) {
             zoom: loc.zoom
         }
     );
-    document.getElementById("pos-override").checked = false;
+    document.getElementById("pos-override").checked = locs_extras.get(active_loc_key).pos_override;
     pano.setVisible(true);
 
     document.getElementById("save-loc").disabled = false;
@@ -654,6 +655,7 @@ function override_layer_mix_listener(e) {
 function save_loc_listener(e) {
     e.target.disabled = true;
     const loc = locs.get(active_loc_key);
+    const extras = locs_extras.get(active_loc_key);
 
     if(document.getElementById("lock-panoid").checked) {
         loc.panoId = pano.getPano();
@@ -661,15 +663,16 @@ function save_loc_listener(e) {
     else {
         loc.panoId = null;
     }
+    extras.pano_on_last_save = pano.getPano();
 
-    if(document.getElementById("pos-override").checked) {
-        loc.lat = document.getElementById("set-lat").valueAsNumber;
-        loc.lng = document.getElementById("set-lng").valueAsNumber;
+    if(extras.pos_override = document.getElementById("pos-override").checked) {
+        loc.lat = extras.lat = document.getElementById("set-lat").valueAsNumber;
+        loc.lng = extras.lng = document.getElementById("set-lng").valueAsNumber;
     }
     else {
         const pos = pano.getPosition();
-        loc.lat = pos.lat();
-        loc.lng = pos.lng();
+        loc.lat = extras.lat = pos.lat();
+        loc.lng = extras.lng = pos.lng();
     }
 
     const pov = pano.getPov();
@@ -708,6 +711,7 @@ function delete_loc_listener(e) {
     time_machine_menu.disabled = true;
     
     locs.delete(active_loc_key);
+    locs_extras.delete(active_loc_key);
     document.getElementById("count").textContent = `${locs.size}`;
     if(locs_added.has(active_loc_key)) {
         locs_added.delete(active_loc_key);
@@ -733,64 +737,80 @@ function delete_loc_listener(e) {
 function save_map_listener(e) {
     e.target.disabled = true;
 
-    const json = {
-        name:              document.getElementById("name").value,
-        customCoordinates: Array.from(locs.values()),
-        regions:           JSON.parse(document.getElementById("regions").value),
-        description:       document.getElementById("description").value,
-        avatar:            JSON.parse(document.getElementById("avatar").value),
-        published:         document.getElementById("published").checked,
-        highlighted:       document.getElementById("highlighted").checked
-    };
-    
-    fetch(
-        `https://www.geoguessr.com/api/v3/profiles/maps/${mapID}`,
+    browser.storage.local.set(
         {
-            method: 'POST',
-            body: JSON.stringify(json),
-            credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json'
+            [local_ID]: {
+                locs: Array.from(locs.values()),
+                locs_extras: Array.from(locs_extras.values()),
+                export_targets
             }
         }
     ).then(
-        (response) => {
-            console.log(response);
-            const span = document.getElementById("save-status");
-            span.textContent = "";
-
-            if(response.status == 200) {
-                span.className = "success";
-                span.textContent = `Saved successfully at ${(new Date(response.headers.get("date"))).toLocaleString("sv")}`;
-
-                locs_added = new Map();
-                locs_modified = new Map();
-                deleted_count = 0;
-
-                update_count_of_changes()
-            }
-            else {
-                span.className = "failure";
-                span.textContent = `status code ${response.status}`;
-            }
-
-            e.target.disabled = false;
-        },
-
-        (failure_reason) => {
-            // const span = document.getElementById("save-status");
-            // span.textContent = "";
-            // span.className = "failure";
-            // span.textContent = `Failed (${failure_reason})`;
-            Object.assign(
-                document.getElementById("save-status"),
-                {
-                    className: "failure",
-                    textContent: `Failed (${failure_reason})`
-                }
-            );
+        () => {
+            locs_added = new Map();
+            locs_modified = new Map();
+            deleted_count = 0;
+            
+            update_count_of_changes();
 
             e.target.disabled = false;
         }
     );
+
+    // const json = {
+    //     name:              document.getElementById("name").value,
+    //     customCoordinates: Array.from(locs.values()),
+    //     regions:           JSON.parse(document.getElementById("regions").value),
+    //     description:       document.getElementById("description").value,
+    //     avatar:            JSON.parse(document.getElementById("avatar").value),
+    //     published:         document.getElementById("published").checked,
+    //     highlighted:       document.getElementById("highlighted").checked
+    // };
+    
+    // fetch(
+    //     `https://www.geoguessr.com/api/v3/profiles/maps/${mapID}`,
+    //     {
+    //         method: 'POST',
+    //         body: JSON.stringify(json),
+    //         credentials: 'include',
+    //         headers: {
+    //             'Content-Type': 'application/json'
+    //         }
+    //     }
+    // ).then(
+    //     (response) => {
+    //         console.log(response);
+    //         const span = document.getElementById("save-status");
+    //         span.textContent = "";
+
+    //         if(response.status == 200) {
+    //             span.className = "success";
+    //             span.textContent = `Saved successfully at ${(new Date(response.headers.get("date"))).toLocaleString("sv")}`;
+
+    //             locs_added = new Map();
+    //             locs_modified = new Map();
+    //             deleted_count = 0;
+
+    //             update_count_of_changes()
+    //         }
+    //         else {
+    //             span.className = "failure";
+    //             span.textContent = `status code ${response.status}`;
+    //         }
+
+    //         e.target.disabled = false;
+    //     },
+
+    //     (failure_reason) => {
+    //         Object.assign(
+    //             document.getElementById("save-status"),
+    //             {
+    //                 className: "failure",
+    //                 textContent: `Failed (${failure_reason})`
+    //             }
+    //         );
+
+    //         e.target.disabled = false;
+    //     }
+    // );
 }

@@ -3,101 +3,107 @@
     <head>
         <meta charset="utf-8">
         <link rel="stylesheet" href="/editor.css">
+        <script src="/index.js"></script>
         <script src="/editor.js"></script>
     </head>
     <body>
-        <div id="map"> </div>
-
-        <div id="pano"> 
-            <div id="guides" hidden>
-                <!-- 
-                    At any fixed zoom level, the vertical FoV is fixed, not
-                    depending on the div height at all. The horizontal FoV
-                    is then directly tied to the aspect ratio of the div.
-                    So vertically we've been freed to be able to think
-                    about the rule of thirds, while horizontally there
-                    remains the more important matter of showing what's
-                    even visible at narrower aspect ratios.
-                 -->
-
-                <div class="guide-normal guide-horizontal upper-3rd"></div>
-                <div class="guide-normal guide-horizontal lower-3rd"></div>
-
-                <!-- 10:7 is the aspect ratio from the default editor. -->
-                <div class="guide-normal guide-vertical _10-7-left"></div>
-                <div class="guide-normal guide-vertical _10-7-right"></div>
-                <div class="guide-normal guide-vertical _4-3-left"></div>
-                <div class="guide-normal guide-vertical _4-3-right"></div>
-
-                <div class="guide-diff guide-horizontal upper-3rd"></div>
-                <div class="guide-diff guide-horizontal lower-3rd"></div>
-
-                <div class="guide-diff guide-vertical _10-7-left"></div>
-                <div class="guide-diff guide-vertical _10-7-right"></div>
-                <div class="guide-diff guide-vertical _4-3-left"></div>
-                <div class="guide-diff guide-vertical _4-3-right"></div>
-
-                <div class="reticle reticle-outer reticle-horizontal"></div>
-                <div class="reticle reticle-outer reticle-vertical"></div>
-
-                <div class="reticle reticle-inner reticle-horizontal"></div>
-                <div class="reticle reticle-inner reticle-vertical"></div>
-            </div>
+        <div id="main-menu">
+            <button id="new-map">New map</button>
+            <menu id="maps-list"></menu>
         </div>
-        
 
-        <div id="right">
-            <div id="right-map">
-                <div>
-                    <div>
-                        <label for="mapID"> Enter map ID: </label>
-                    </div>
-                    <div>
-                        <input id="mapID" size="24">
-                        <button id="open-map-button"> Open </button>
-                    </div>
+        <div id="editor" hidden>
+            <div id="map"> </div>
+
+            <div id="pano"> 
+                <div id="guides" hidden>
+                    <!-- 
+                        At any fixed zoom level, the vertical FoV is fixed, not
+                        depending on the div height at all. The horizontal FoV
+                        is then directly tied to the aspect ratio of the div.
+                        So vertically we've been freed to be able to think
+                        about the rule of thirds, while horizontally there
+                        remains the more important matter of showing what's
+                        even visible at narrower aspect ratios.
+                    -->
+
+                    <div class="guide-normal guide-horizontal upper-3rd"></div>
+                    <div class="guide-normal guide-horizontal lower-3rd"></div>
+
+                    <!-- 10:7 is the aspect ratio from the default editor. -->
+                    <div class="guide-normal guide-vertical _10-7-left"></div>
+                    <div class="guide-normal guide-vertical _10-7-right"></div>
+                    <div class="guide-normal guide-vertical _4-3-left"></div>
+                    <div class="guide-normal guide-vertical _4-3-right"></div>
+
+                    <div class="guide-diff guide-horizontal upper-3rd"></div>
+                    <div class="guide-diff guide-horizontal lower-3rd"></div>
+
+                    <div class="guide-diff guide-vertical _10-7-left"></div>
+                    <div class="guide-diff guide-vertical _10-7-right"></div>
+                    <div class="guide-diff guide-vertical _4-3-left"></div>
+                    <div class="guide-diff guide-vertical _4-3-right"></div>
+
+                    <div class="reticle reticle-outer reticle-horizontal"></div>
+                    <div class="reticle reticle-outer reticle-vertical"></div>
+
+                    <div class="reticle reticle-inner reticle-horizontal"></div>
+                    <div class="reticle reticle-inner reticle-vertical"></div>
                 </div>
-                <div>
-                    <div>
-                        <label for="name"> Map name: </label>
-                    </div>
-                    <div>
-                        <input id="name" size="40">
-                    </div>
-                </div>
-                <div>
-                    <div>
-                        <label for="description"> Map description: </label>
-                    </div>
-                    <div>
-                        <textarea id="description" cols="50" rows="8"></textarea>
-                    </div>
-                </div>
-                <div>
-                    <div style="display:inline-block">
+            </div>
+            
+
+            <div id="right">
+                <div id="right-map">
+                    <!-- <div>
                         <div>
-                            <label for="regions"> Map regions: </label>
+                            <label for="mapID"> Enter map ID: </label>
                         </div>
                         <div>
-                            <textarea id="regions"></textarea>
+                            <input id="mapID" size="24">
+                            <button id="open-map-button"> Open </button>
                         </div>
                     </div>
-                    <div style="display:inline-block">
+                    <div>
                         <div>
-                            <label for="avatar"> Map avatar: </label>
+                            <label for="name"> Map name: </label>
                         </div>
                         <div>
-                            <textarea id="avatar"></textarea>
+                            <input id="name" size="40">
                         </div>
                     </div>
-                </div>
-                <div>
+                    <div>
+                        <div>
+                            <label for="description"> Map description: </label>
+                        </div>
+                        <div>
+                            <textarea id="description" cols="50" rows="8"></textarea>
+                        </div>
+                    </div>
+                    <div>
+                        <div style="display:inline-block">
+                            <div>
+                                <label for="regions"> Map regions: </label>
+                            </div>
+                            <div>
+                                <textarea id="regions"></textarea>
+                            </div>
+                        </div>
+                        <div style="display:inline-block">
+                            <div>
+                                <label for="avatar"> Map avatar: </label>
+                            </div>
+                            <div>
+                                <textarea id="avatar"></textarea>
+                            </div>
+                        </div>
+                    </div>
                     <div>
                         <input id="published" type="checkbox">
                         <label for="published"> Visible to others? </label>
                         <input id="highlighted" type="checkbox">
                         <label for="highlighted"> Highlight? </label>
-                    </div>
+                    </div> -->
                     <div>
                         <span> Location count: </span>
                         <span id="count"> 0 </span>
@@ -106,67 +112,67 @@
                         </span>
                     </div>
                     <div>
-                        <button id="save-map" disabled> Save map </button>
-                        <span id="save-status"></span>
+                        <button id="save-map"> Save map </button>
+                        <!-- <span id="save-status"></span> -->
+                    </div>
+                </div>
+
+                <div id="right-location">
+                    <div>
+                        <label for="time-machine-temp"> Time machine: </label>
+                        <select id="time-machine-temp" disabled></select>
+                    </div>
+                    <div>
+                        <div>
+                            <label for="panoid"> Panorama ID: </label>
+                        </div>
+                        <div>
+                            <input id="panoid" size="22">
+                        </div>
+                        <div>
+                            <input id="lock-panoid" type="checkbox">
+                            <label for="lock-panoid"> Lock Pano ID </label>
+                        </div>
+                    </div>
+                    <div>
+                        <div>
+                            <label> Position metadata for active pano: </label>
+                        </div>
+                        <div>
+                            <input type="number" id="sv-lat" disabled>
+                            <input type="number" id="sv-lng" disabled>
+                        </div>
+                    </div>
+                    <div>
+                        <input id="pos-override" type="checkbox">
+                        <label for="pos-override"> Override pano-provided position </span>
+                    </div>
+                    <div>
+                        <div>
+                            <label> Position (defaults to stored value): </label>
+                        </div>
+                        <div>
+                            <input type="number" id="set-lat" step="any">
+                            <input type="number" id="set-lng" step="any">
+                            <button id="select-override" disabled> ⌖ </button>
+                        </div>
+                    </div>
+                    <div>
+                        <button id="save-loc" disabled> Save location </button>
+                        <button id="del-loc" disabled> Delete location </button>
                     </div>
                 </div>
             </div>
 
-            <div id="right-location">
-                <div>
-                    <label for="time-machine-temp"> Time machine: </label>
-                    <select id="time-machine-temp" disabled></select>
+            <div id="pos-override-popup" style="display: none;">
+                <div id="override-popup-undermap" class="override-popup-layer"> </div>
+                <div id="override-popup-map" class="override-popup-layer"> </div>
+                <button id="override-popup-cancel"> Cancel and exit </button>
+                <div id="override-popup-underlay-controls">
+                    <button id="override-popup-init-underlay"> Enable and align underlay </button>
+                    <button id = "override-popup-swap"> Swap layer order </button>
+                    <input id="override-popup-fg-slider" type="range" min=0 max=1 step="any" disabled>
                 </div>
-                <div>
-                    <div>
-                        <label for="panoid"> Panorama ID: </label>
-                    </div>
-                    <div>
-                        <input id="panoid" size="22">
-                    </div>
-                    <div>
-                        <input id="lock-panoid" type="checkbox">
-                        <label for="lock-panoid"> Lock Pano ID </label>
-                    </div>
-                </div>
-                <div>
-                    <div>
-                        <label> Position metadata for active pano: </label>
-                    </div>
-                    <div>
-                        <input type="number" id="sv-lat" disabled>
-                        <input type="number" id="sv-lng" disabled>
-                    </div>
-                </div>
-                <div>
-                    <input id="pos-override" type="checkbox">
-                    <label for="pos-override"> Override pano-provided position </span>
-                </div>
-                <div>
-                    <div>
-                        <label> Position (defaults to stored value): </label>
-                    </div>
-                    <div>
-                        <input type="number" id="set-lat" step="any">
-                        <input type="number" id="set-lng" step="any">
-                        <button id="select-override" disabled> ⌖ </button>
-                    </div>
-                </div>
-                <div>
-                    <button id="save-loc" disabled> Save location </button>
-                    <button id="del-loc" disabled> Delete location </button>
-                </div>
-            </div>
-        </div>
-
-        <div id="pos-override-popup" style="display: none;">
-            <div id="override-popup-undermap" class="override-popup-layer"> </div>
-            <div id="override-popup-map" class="override-popup-layer"> </div>
-            <button id="override-popup-cancel"> Cancel and exit </button>
-            <div id="override-popup-underlay-controls">
-                <button id="override-popup-init-underlay"> Enable and align underlay </button>
-                <button id = "override-popup-swap"> Swap layer order </button>
-                <input id="override-popup-fg-slider" type="range" min=0 max=1 step="any" disabled>
             </div>
         </div>
     </body>

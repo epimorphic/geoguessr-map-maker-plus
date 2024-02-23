@@ -4,6 +4,22 @@ body {
     background-color: #1a1a2e;
 }
 
+#main-menu {
+    color: white;
+}
+
+#maps-list {
+    list-style-type: none;
+}
+
+#editor {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 100%;
+}
+
 #map, #pano {
     height: 50%;
     aspect-ratio: 16 / 9;
