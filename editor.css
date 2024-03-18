@@ -2,7 +2,6 @@ body {
     margin: 0;
     height: 100vh;
     background-color: #1a1a2e;
-    color: white;
     font-family: sans-serif;
 }
 
@@ -244,6 +243,7 @@ div[id="right"] label, div[id="right"] span {
     height: 100%;
     width: 100%;
     background-color: rgba(0, 0, 0, 0.5);
+    color: white;
 }
 
 #pos-override-popup {
