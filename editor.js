@@ -113,50 +113,9 @@ async function editor_setup() {
     (new google.maps.StreetViewCoverageLayer()).setMap(map);
 
 
-    const view_options_control = document.createElement("div");
-    view_options_control.className = "map-control";
-
-    const view_options_head = Object.assign(
-        document.createElement("div"),
-        {
-            className: "map-control-mimic",
-            textContent: "Options"
-        }
-    );
-    view_options_control.append(view_options_head);
-
-    const view_options_body = Object.assign(
-        document.createElement("div"),
-        {
-            id: "map-options-popup",
-            className: "map-control-hover"
-        }
-    );
-    view_options_body.style.display = "none";
-    const labels_layer_option = document.createElement("div");
-    const labels_layer_checkbox = Object.assign(
-        document.createElement("input"),
-        {
-            type: "checkbox",
-            checked: true,
-            id: "labels-in-top-layer"
-        }
-    );
-    const labels_layer_checkbox_label = Object.assign(
-        document.createElement("label"),
-        {
-            htmlFor: "labels-in-top-layer",
-            textContent: "Draw labels in a separate layer above StreetViewCoverageLayer"
-        }
-    );
-    labels_layer_option.append(
-        labels_layer_checkbox,
-        labels_layer_checkbox_label
-    );
-    view_options_body.append(labels_layer_option);
-    view_options_control.append(view_options_body);
-
-    labels_layer_checkbox.addEventListener(
+    const view_options_control = document.getElementById("map-options-control-stash").content.firstElementChild;
+    
+    view_options_control.querySelector("#labels-in-top-layer").addEventListener(
         "input",
         (ev) => {
             if(ev.target.checked) {
@@ -183,7 +142,7 @@ async function editor_setup() {
         }
     );
 
-    view_options_head.addEventListener(
+    view_options_control.querySelector(".map-control-mimic").addEventListener(
         "mouseenter",
         () => {
             document.getElementById("map-options-popup").style.display = "block";
@@ -212,18 +171,11 @@ async function editor_setup() {
 
     svs = new google.maps.StreetViewService();
 
-    const pano_guide_toggle_div = document.createElement("div");
-    const pano_guide_toggle_button = Object.assign(
-        document.createElement("button"),
-        {
-            className: "pano-control",
-            innerText: "Toggle guides"
-        }
-    );
-    pano_guide_toggle_button.addEventListener(
+    const pano_guide_toggle = document.getElementById("pano-guide-toggle-control-stash").content.firstElementChild;
+    pano_guide_toggle.querySelector("button").addEventListener(
         "click",
-        () => {
-            pano_guide_toggle_button.disabled = true;
+        (event) => {
+            event.target.disabled = true;
             const guides = pano_div.querySelector("#guides");
             if(guides.moved == null) {
                 guides.moved = true;
@@ -232,12 +184,11 @@ async function editor_setup() {
                 );
             }
             guides.hidden = !(guides.hidden);
-            pano_guide_toggle_button.disabled = false;
+            event.target.disabled = false;
         }
     );
-    pano_guide_toggle_div.append(pano_guide_toggle_button);
     pano.controls[google.maps.ControlPosition.BOTTOM_LEFT].push(
-        pano_guide_toggle_div
+        pano_guide_toggle
     );
 
     // If pano ID changes, update corresponding field and update list of panoramas taken at this location over time
