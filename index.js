@@ -68,7 +68,7 @@ function new_map() {
                         [map_id]: {
                             locs: [],
                             locs_extras: [],
-                            export_targets: []
+                            upload_targets: []
                         }
                     }
                 ).then(

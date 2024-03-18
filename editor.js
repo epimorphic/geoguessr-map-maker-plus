@@ -2,7 +2,7 @@ let map, pano, svs;
 let labels_overlay_layer;
 let override_selection_map, override_undermap;
 let local_ID;
-// let export_targets;
+// let upload_targets;
 let locs, locs_extras;
 let active_loc_key, active_marker;
 let next_key;
@@ -431,7 +431,7 @@ async function open_map(storage_key) {
                 )
             );
 
-            for(const target of data.export_targets) {
+            for(const target of data.upload_targets) {
                 add_target(target);
             }
 
@@ -926,7 +926,7 @@ function add_target(data) {
 
 async function save_map(should_upload) {
     const target_nodes = document.getElementById("targets-modal").querySelectorAll(".target-div");
-    const export_targets = Array.from(target_nodes.values()).map(
+    const upload_targets = Array.from(target_nodes.values()).map(
         (node) => ({
             id:          node.querySelector(".target-map-id").value,
             name:        node.querySelector(".target-name").value,
@@ -945,7 +945,7 @@ async function save_map(should_upload) {
             [local_ID]: {
                 locs: locs_array,
                 locs_extras: Array.from(locs_extras.values()),
-                export_targets
+                upload_targets
             }
         }
     ).then(
@@ -957,7 +957,7 @@ async function save_map(should_upload) {
             update_count_of_changes();
 
             if(should_upload) {
-                for(const target of export_targets) {
+                for(const target of upload_targets) {
 
                     const body_object = (
                         ({name, regions, description, avatar, published, highlighted}) => ({
