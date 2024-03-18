@@ -18,7 +18,7 @@ You'll need to provide your own API key for the Google Maps JavaScript API. To s
 - [ ] Draw marker for current location on position override map
 - [ ] Other cosmetic improvements
 
-- [ ] Make storage.local the primary data store instead of GeoGuessr's server(s), to allow flexibility in what can be stored across edit sessions (such as saving the position override preference).
+- [x] Make storage.local the primary data store instead of GeoGuessr's server(s), to allow flexibility in what can be stored across edit sessions (such as saving the position override preference).
     - [ ] Implement location tagging
         - [ ] Implement import of locations and have tags applied to entire batch
         - [ ] Tag-based filter to upload only a subset of locations to GeoGuessr

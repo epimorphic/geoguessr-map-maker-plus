@@ -2,7 +2,7 @@ let map, pano, svs;
 let labels_overlay_layer;
 let override_selection_map, override_undermap;
 let local_ID;
-let export_targets;
+// let export_targets;
 let locs, locs_extras;
 let active_loc_key, active_marker;
 let next_key;
@@ -334,10 +334,65 @@ async function editor_setup() {
         "click",
         delete_loc_listener
     );
+
+    document.getElementById("open-import-modal").addEventListener(
+        "click",
+        open_import_modal
+    );
+
+    document.getElementById("open-targets-modal").addEventListener(
+        "click",
+        open_targets_modal
+    );
+
+    document.getElementById("import-modal").querySelector("button.modal-cancel").addEventListener(
+        "click",
+        close_import_modal
+    );
+
+    document.getElementById("targets-modal").querySelector("button.modal-cancel").addEventListener(
+        "click",
+        close_targets_modal
+    );
+
+    document.getElementById("import-source-gg").addEventListener(
+        "paste",
+        (event) => {
+            const match = event.clipboardData.getData("text").match(
+                /https:\/\/www\.geoguessr\.com\/(?:maps|map-maker)\/([0-9a-f]{24})/
+            );
+            if(match) {
+                event.preventDefault();
+                event.target.value = match[1];
+            }
+        }
+    );
+
+    document.getElementById("gg-import-execute").addEventListener(
+        "click",
+        (event) => {
+            import_locs_from_gg(
+                event,
+                document.getElementById("import-source-gg").value,
+                document.getElementById("source-as-target").checked
+            )
+        }
+    );
     
     document.getElementById("save-map").addEventListener(
         "click",
-        save_map_listener
+        local_map_save_listener
+    );
+
+    document.getElementById("save-upload-map").addEventListener(
+        "click",
+        save_upload_map_listener
+    );
+
+    // don't trigger loc_paste_listener if modals are open
+    document.getElementById("modals").addEventListener(
+        "paste",
+        (event) => event.stopPropagation()
     );
 
     document.getElementById("editor").addEventListener(
@@ -376,7 +431,9 @@ async function open_map(storage_key) {
                 )
             );
 
-            export_targets = data.export_targets;
+            for(const target of data.export_targets) {
+                add_target(target);
+            }
 
             next_key = locs.size;
             document.getElementById("count").textContent = `${next_key}`;
@@ -734,13 +791,159 @@ function delete_loc_listener(e) {
     document.getElementById("set-lng").value = NaN;
 }
 
-function save_map_listener(e) {
-    e.target.disabled = true;
+function open_import_modal(event) {
+    document.getElementById("import-modal").hidden = false;
+    document.getElementById("modals").hidden = false;
+}
+
+function open_targets_modal(event) {
+    document.getElementById("targets-modal").hidden = false;
+    document.getElementById("modals").hidden = false;
+}
+
+function close_import_modal(event) {
+    document.getElementById("import-modal").hidden = true;
+    document.getElementById("modals").hidden = true;
+}
+
+function close_targets_modal(event) {
+    document.getElementById("targets-modal").hidden = true;
+    document.getElementById("modals").hidden = true;
+}
+
+function import_locs_from_gg(event, map_ID, add_as_target) {
+    event.target.disabled = true;
+
+    fetch(
+        `https://www.geoguessr.com/api/v3/profiles/maps/${map_ID}`,
+        {
+            method: 'GET',
+            credentials: 'include'
+        }
+    ).then(
+        response => response.json()
+    ).then(
+        (data) => {
+
+            for(const loc of data.customCoordinates) {
+
+                locs.set(next_key, loc);
+
+                locs_extras.set(
+                    next_key,
+                    {
+                        lat: loc.lat,
+                        lng: loc.lng,
+                        /*
+                            Defer checking for latLng override
+                            since making getPanorama requests
+                            for every location with pano ID could
+                            take a while.
+                        */
+                        // ...(
+                        //     loc.panoId ? {initialization_unfinished: true} : {}
+                        // )
+                        // initialization_unfinished: true
+                    }
+                );
+                
+                locs_added.set(next_key, null);
+
+                create_marker(next_key, loc);
+
+                next_key++;
+            }
+
+            // locs = new Map(
+            //     ...locs,
+            //     data.customCoordinates.map(
+            //         (loc, index) => [next_key + index, loc]
+            //     )
+            // );
+
+            // locs_extras = new Map(
+            //     ...locs_extras,
+            //     data.customCoordinates.map(
+            //         (loc, index) => [
+            //             next_key + index,
+            //             {
+            //                 lat: loc.lat,
+            //                 lng: loc.lng,
+            //                 /*
+            //                     Defer checking for latLng override
+            //                     since making getPanorama requests
+            //                     for every location with pano ID could
+            //                     take a while.
+            //                 */
+            //                 ...(
+            //                     loc.panoId ? {unfinished_initialization: true} : {}
+            //                 )
+            //             }
+            //         ]
+            //     )
+            // );
+
+            // locs_added = new Map(
+            //     ...locs_added,
+            //     ...
+            // )
+
+            // next_key += data.customCoordinates.length;
+
+            document.getElementById("count").textContent = `${locs.size}`;
+            update_count_of_changes();
+
+            if(add_as_target) {
+                add_target(data);
+            }
+        },
+
+        (failure_reason) => alert(failure_reason)
+        
+    ).finally(
+        () => {
+            close_import_modal();
+            event.target.disabled = false;
+        }
+    );
+}
+
+
+function add_target(data) {
+    const node = document.getElementById("target-template").content.cloneNode(true);
+
+    node.querySelector(".target-map-id").value = data.id;
+    node.querySelector(".target-name").value = data.name;
+    node.querySelector(".target-description").value = data.description;
+    node.querySelector(".target-regions").value = JSON.stringify(data.regions);
+    node.querySelector(".target-avatar").value = JSON.stringify(data.avatar);
+    node.querySelector(".target-published").checked = data.published;
+    node.querySelector(".target-highlighted").checked = data.highlighted;
+
+    document.getElementById("targets-modal").append(node);
+}
+
+
+async function save_map(should_upload) {
+    const target_nodes = document.getElementById("targets-modal").querySelectorAll(".target-div");
+    const export_targets = Array.from(target_nodes.values()).map(
+        (node) => ({
+            id:          node.querySelector(".target-map-id").value,
+            name:        node.querySelector(".target-name").value,
+            // customCoordinates: null,
+            regions:     JSON.parse(node.querySelector(".target-regions").value),
+            description: node.querySelector(".target-description").value,
+            avatar:      JSON.parse(node.querySelector(".target-avatar").value),
+            published:   node.querySelector(".target-published").checked,
+            highlighted: node.querySelector(".target-highlighted").checked
+        })
+    );
+    const locs_array = Array.from(locs.values());
 
     browser.storage.local.set(
         {
             [local_ID]: {
-                locs: Array.from(locs.values()),
+                locs: locs_array,
                 locs_extras: Array.from(locs_extras.values()),
                 export_targets
             }
@@ -753,64 +956,55 @@ function save_map_listener(e) {
             
             update_count_of_changes();
 
+            if(should_upload) {
+                for(const target of export_targets) {
+
+                    const body_object = (
+                        ({name, regions, description, avatar, published, highlighted}) => ({
+                            name,
+                            customCoordinates: locs_array,
+                            regions,
+                            description,
+                            avatar,
+                            published,
+                            highlighted
+                        })
+                    )(target);
+
+                    fetch(
+                        `https://www.geoguessr.com/api/v3/profiles/maps/${target.id}`,
+                        {
+                            method: 'POST',
+                            body: JSON.stringify(body_object),
+                            credentials: 'include',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            }
+                        }
+                    )
+                }
+            }
+        }
+    );
+}
+
+
+function local_map_save_listener(e) {
+    e.target.disabled = true;
+
+    save_map(false).then(
+        () => {
             e.target.disabled = false;
         }
     );
+}
 
-    // const json = {
-    //     name:              document.getElementById("name").value,
-    //     customCoordinates: Array.from(locs.values()),
-    //     regions:           JSON.parse(document.getElementById("regions").value),
-    //     description:       document.getElementById("description").value,
-    //     avatar:            JSON.parse(document.getElementById("avatar").value),
-    //     published:         document.getElementById("published").checked,
-    //     highlighted:       document.getElementById("highlighted").checked
-    // };
-    
-    // fetch(
-    //     `https://www.geoguessr.com/api/v3/profiles/maps/${mapID}`,
-    //     {
-    //         method: 'POST',
-    //         body: JSON.stringify(json),
-    //         credentials: 'include',
-    //         headers: {
-    //             'Content-Type': 'application/json'
-    //         }
-    //     }
-    // ).then(
-    //     (response) => {
-    //         console.log(response);
-    //         const span = document.getElementById("save-status");
-    //         span.textContent = "";
+function save_upload_map_listener(event) {
+    event.target.disabled = true;
 
-    //         if(response.status == 200) {
-    //             span.className = "success";
-    //             span.textContent = `Saved successfully at ${(new Date(response.headers.get("date"))).toLocaleString("sv")}`;
-
-    //             locs_added = new Map();
-    //             locs_modified = new Map();
-    //             deleted_count = 0;
-
-    //             update_count_of_changes()
-    //         }
-    //         else {
-    //             span.className = "failure";
-    //             span.textContent = `status code ${response.status}`;
-    //         }
-
-    //         e.target.disabled = false;
-    //     },
-
-    //     (failure_reason) => {
-    //         Object.assign(
-    //             document.getElementById("save-status"),
-    //             {
-    //                 className: "failure",
-    //                 textContent: `Failed (${failure_reason})`
-    //             }
-    //         );
-
-    //         e.target.disabled = false;
-    //     }
-    // );
+    save_map(true).then(
+        () => {
+            event.target.disabled = false;
+        }
+    )
 }

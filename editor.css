@@ -2,10 +2,12 @@ body {
     margin: 0;
     height: 100vh;
     background-color: #1a1a2e;
+    color: white;
+    font-family: sans-serif;
 }
 
-#main-menu {
-    color: white;
+[hidden=""], [hidden="hidden"] {
+    display: none !important;
 }
 
 #maps-list {
@@ -186,7 +188,6 @@ body {
     top: 0;
     left: calc(100vh * 16 / 18);
     height: 100vh;
-    font-family: sans-serif;
 }
 
 #right > div {
@@ -234,6 +235,17 @@ div[id="right"] label, div[id="right"] span {
     margin: 0;
 }
 
+#modals {
+    display: grid;
+    place-items: center;
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
 #pos-override-popup {
     position: absolute;
     top: 0;
@@ -268,4 +280,10 @@ div[id="right"] label, div[id="right"] span {
     position: absolute;
     bottom: 90%;
     right: 10%;
+}
+
+#import-modal, #targets-modal {
+    z-index: 100;
+    background-color: black;
+    padding: 20px;
 }

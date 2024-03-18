@@ -55,55 +55,6 @@
 
             <div id="right">
                 <div id="right-map">
-                    <!-- <div>
-                        <div>
-                            <label for="mapID"> Enter map ID: </label>
-                        </div>
-                        <div>
-                            <input id="mapID" size="24">
-                            <button id="open-map-button"> Open </button>
-                        </div>
-                    </div>
-                    <div>
-                        <div>
-                            <label for="name"> Map name: </label>
-                        </div>
-                        <div>
-                            <input id="name" size="40">
-                        </div>
-                    </div>
-                    <div>
-                        <div>
-                            <label for="description"> Map description: </label>
-                        </div>
-                        <div>
-                            <textarea id="description" cols="50" rows="8"></textarea>
-                        </div>
-                    </div>
-                    <div>
-                        <div style="display:inline-block">
-                            <div>
-                                <label for="regions"> Map regions: </label>
-                            </div>
-                            <div>
-                                <textarea id="regions"></textarea>
-                            </div>
-                        </div>
-                        <div style="display:inline-block">
-                            <div>
-                                <label for="avatar"> Map avatar: </label>
-                            </div>
-                            <div>
-                                <textarea id="avatar"></textarea>
-                            </div>
-                        </div>
-                    </div>
-                    <div>
-                        <input id="published" type="checkbox">
-                        <label for="published"> Visible to others? </label>
-                        <input id="highlighted" type="checkbox">
-                        <label for="highlighted"> Highlight? </label>
-                    </div> -->
                     <div>
                         <span> Location count: </span>
                         <span id="count"> 0 </span>
@@ -112,8 +63,17 @@
                         </span>
                     </div>
                     <div>
+                        <button id="open-import-modal"> Import </button>
+                    </div>
+                    <div>
+                        <button id="open-targets-modal"> View/edit targets </button>
+                    </div>
+                    <div>
                         <button id="save-map"> Save map </button>
                         <!-- <span id="save-status"></span> -->
+                    </div>
+                    <div>
+                        <button id="save-upload-map"> Save map + Upload </button>
                     </div>
                 </div>
 
@@ -174,6 +134,86 @@
                     <input id="override-popup-fg-slider" type="range" min=0 max=1 step="any" disabled>
                 </div>
             </div>
+
+            <div id="modals" hidden>
+
+                <div id="import-modal" hidden>
+                    <h1> Map import </h1>
+                    <div>
+                        <label for="import-source-gg"> GeoGuessr map ID (or paste link): </label>
+                        <input type="text" id="import-source-gg" size="24">
+                    </div>
+                    <div>
+                        <input type="checkbox" id="source-as-target">
+                        <label for="source-as-target">Add this map as an upload target?</label>
+                    </div>
+                    <div>
+                        <button id="gg-import-execute">Import</button>
+                        <button class="modal-cancel">Cancel</button>
+                    </div>
+                </div>
+
+                <div id="targets-modal" hidden>
+                    <div>
+                        <button class="modal-cancel">🗙</button>
+                    </div>
+                    <h1> Upload targets </h1>
+                </div>
+            </div>
         </div>
+
+        <template id="target-template">
+            <div class="target-div">
+                <h2> Target </h2>
+                <div>
+                    <div>
+                        <label class="label-target-map-id"> GeoGuessr map ID: </label>
+                    </div>
+                    <div>
+                        <input class="target-map-id" size="24">
+                    </div>
+                </div>
+                <div>
+                    <div>
+                        <label class="label-target-name"> Map name: </label>
+                    </div>
+                    <div>
+                        <input class="target-name" size="40">
+                    </div>
+                </div>
+                <div>
+                    <div>
+                        <label class="label-target-description"> Map description: </label>
+                    </div>
+                    <div>
+                        <textarea class="target-description" cols="50" rows="8"></textarea>
+                    </div>
+                </div>
+                <div>
+                    <div style="display:inline-block">
+                        <div>
+                            <label class="label-target-regions"> Map regions: </label>
+                        </div>
+                        <div>
+                            <textarea class="target-regions"></textarea>
+                        </div>
+                    </div>
+                    <div style="display:inline-block">
+                        <div>
+                            <label class="label-target-avatar"> Map avatar: </label>
+                        </div>
+                        <div>
+                            <textarea class="target-avatar"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <input class="target-published" type="checkbox">
+                    <label class="label-target-published"> Visible to others? </label>
+                    <input class="target-highlighted" type="checkbox">
+                    <label class="label-target-highlighted"> Highlight? </label>
+                </div>
+            </div>
+        </template>
     </body>
 </html>
