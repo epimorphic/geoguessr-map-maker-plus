@@ -271,9 +271,9 @@ async function editor_setup() {
         override_layer_mix_listener
     );
     
-    document.getElementById("override-popup-cancel").addEventListener(
+    document.getElementById("override-modal-cancel").addEventListener(
         "click",
-        hide_override_popup
+        close_override_modal
     );
     
     document.getElementById("save-loc").addEventListener(
@@ -525,10 +525,6 @@ function time_machine_option(entry) {
     }
 }
 
-function hide_override_popup() {
-    document.getElementById("pos-override-popup").style.display = "none";
-}
-
 function update_count_of_changes() {
     let h = "";
     if(locs_added.size > 0) {
@@ -569,6 +565,11 @@ function loc_paste_listener(e) {
     }
 }
 
+function close_override_modal() {
+    document.getElementById("modals").hidden = true;
+    document.getElementById("pos-override-modal").hidden = true;
+}
+
 function open_override_popup_listener(e) {
     if(override_selection_map == null) {
         override_selection_map = new google.maps.Map(
@@ -584,7 +585,7 @@ function open_override_popup_listener(e) {
         override_selection_map.addListener(
             "click",
             (e) => {
-                hide_override_popup();
+                close_override_modal();
                 document.getElementById("set-lat").value = e.latLng.lat();
                 document.getElementById("set-lng").value = e.latLng.lng();
                 document.getElementById("pos-override").checked = true;
@@ -596,30 +597,31 @@ function open_override_popup_listener(e) {
         override_selection_map.setCenter(map.center);
         override_selection_map.setZoom(map.zoom);
     }
-    const popup = document.getElementById("pos-override-popup");
-    popup.querySelector("#override-popup-init-underlay").disabled = false;
-    popup.querySelector("#override-popup-swap").disabled = true;
+    const modal = document.getElementById("pos-override-modal");
+    modal.querySelector("#override-popup-init-underlay").disabled = false;
+    modal.querySelector("#override-popup-swap").disabled = true;
     Object.assign(
-        popup.querySelector("#override-popup-fg-slider"),
+        modal.querySelector("#override-popup-fg-slider"),
         {
             value: "1",
             disabled: true
         }
     );
-    popup.style.setProperty("--override-popup-fg-opacity", "1");
-    const undermap = popup.querySelector("#override-popup-undermap");
-    undermap.style.display = "none";
-    undermap.className = "override-popup-layer";
-    popup.querySelector("#override-popup-map").className = "override-popup-layer override-popup-foreground";
+    modal.style.setProperty("--override-popup-fg-opacity", "1");
+    const undermap = modal.querySelector("#override-popup-undermap");
+    undermap.hidden = true;
+    undermap.className = "override-map-layer";
+    modal.querySelector("#override-popup-map").className = "override-map-layer override-popup-foreground";
 
-    popup.style.display = "block";
+    modal.hidden = false;
+    modal.parentElement.hidden = false;
 }
 
 function enable_underlay_listener(e) {
     e.target.disabled = true;
 
-    const popup = document.getElementById("pos-override-popup");
-    const undermap_div = popup.querySelector("#override-popup-undermap");
+    const modal = document.getElementById("pos-override-modal");
+    const undermap_div = modal.querySelector("#override-popup-undermap");
 
     if(override_undermap == null) {
         override_undermap = new google.maps.Map(
@@ -637,24 +639,24 @@ function enable_underlay_listener(e) {
         override_undermap.setZoom(override_selection_map.zoom);
     }
 
-    undermap_div.style.display = "block";
-    popup.querySelector("#override-popup-swap").disabled = false;
-    popup.querySelector("#override-popup-fg-slider").disabled = false;
+    undermap_div.hidden = false;
+    modal.querySelector("#override-popup-swap").disabled = false;
+    modal.querySelector("#override-popup-fg-slider").disabled = false;
 }
 
 function swap_override_popup_layers_listener(e) {
     e.target.disabled = true;
 
-    const popup = document.getElementById("pos-override-popup");
-    const layer1 = popup.querySelector("#override-popup-map");
-    const layer2 = popup.querySelector("#override-popup-undermap");
+    const modal = document.getElementById("pos-override-modal");
+    const layer1 = modal.querySelector("#override-popup-map");
+    const layer2 = modal.querySelector("#override-popup-undermap");
     [layer1.className, layer2.className] = [layer2.className, layer1.className];
 
     e.target.disabled = false;
 }
 
 function override_layer_mix_listener(e) {
-    document.getElementById("pos-override-popup").style.setProperty(
+    document.getElementById("pos-override-modal").style.setProperty(
         "--override-popup-fg-opacity",
         e.target.valueAsNumber
     )

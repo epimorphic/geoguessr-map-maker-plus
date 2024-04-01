@@ -124,17 +124,6 @@
                 </div>
             </div>
 
-            <div id="pos-override-popup" style="display: none;">
-                <div id="override-popup-undermap" class="override-popup-layer"> </div>
-                <div id="override-popup-map" class="override-popup-layer"> </div>
-                <button id="override-popup-cancel"> Cancel and exit </button>
-                <div id="override-popup-underlay-controls">
-                    <button id="override-popup-init-underlay"> Enable and align underlay </button>
-                    <button id = "override-popup-swap"> Swap layer order </button>
-                    <input id="override-popup-fg-slider" type="range" min=0 max=1 step="any" disabled>
-                </div>
-            </div>
-
             <div id="modals" hidden>
 
                 <div id="import-modal" hidden>
@@ -158,6 +147,17 @@
                         <button class="modal-cancel">🗙</button>
                     </div>
                     <h1> Upload targets </h1>
+                </div>
+
+                <div id="pos-override-modal" hidden>
+                    <div id="override-popup-map" class="override-map-layer"> </div>
+                    <div id="override-popup-undermap" class="override-map-layer"> </div>
+                    <button id="override-modal-cancel"> Cancel and exit </button>
+                    <div id="override-modal-mixing-controls">
+                        <button id="override-popup-init-underlay"> Enable and align underlay </button>
+                        <button id = "override-popup-swap"> Swap layer order </button>
+                        <input id="override-popup-fg-slider" type="range" min=0 max=1 step="any" disabled>
+                    </div>
                 </div>
             </div>
         </div>

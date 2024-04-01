@@ -246,7 +246,7 @@ div[id="right"] label, div[id="right"] span {
     color: white;
 }
 
-#pos-override-popup {
+#pos-override-modal {
     position: absolute;
     top: 0;
     height: 100%;
@@ -255,7 +255,7 @@ div[id="right"] label, div[id="right"] span {
     background-color: rgba(0, 0, 0, 0.75);
 }
 
-.override-popup-layer {
+.override-map-layer {
     position: absolute;
     left: 10%;
     top: 10%;
@@ -265,18 +265,18 @@ div[id="right"] label, div[id="right"] span {
     opacity: 1;
 }
 
-.override-popup-layer.override-popup-foreground {
+.override-map-layer.override-popup-foreground {
     z-index: 1;
     opacity: var(--override-popup-fg-opacity);
 }
 
-#override-popup-underlay-controls {
+#override-modal-mixing-controls {
     position: absolute;
     top: 90%;
     left: 10%;
 }
 
-#override-popup-cancel {
+#override-modal-cancel {
     position: absolute;
     bottom: 90%;
     right: 10%;
