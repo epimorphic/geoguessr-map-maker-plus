@@ -191,7 +191,7 @@ async function editor_setup() {
         pano_guide_toggle
     );
 
-    // If pano ID changes, update corresponding field and update list of panoramas taken at this location over time
+    // If pano ID changes 
     pano.addListener(
         "pano_changed",
         () => {
@@ -201,7 +201,13 @@ async function editor_setup() {
             const panoID = pano.getPano();
             svs.getPanoramaById(panoID).then(
                 (d) => {
-                    const list = d.data.time;
+                    const data = d.data;
+
+                    ////////////////////////////////////////////
+                    // Update list of available panorama months
+                    ////////////////////////////////////////////
+
+                    const list = data.time;
                     
                     // Add matching option first to select it by default
                     let match = list.length - 1;
@@ -228,8 +234,17 @@ async function editor_setup() {
     
                         menu.disabled = false;
                     }
+
+                    //////////////////////////
+                    // Update pano dimensions
+                    //////////////////////////
+
+                    const pano_size = d.data.tiles.worldSize;
+                    document.getElementById("pano-size").value = `${pano_size.width} × ${pano_size.height}`;
                 }
             );
+
+            // also update pano ID field
             document.getElementById("panoid").value = panoID;
         }
     );
