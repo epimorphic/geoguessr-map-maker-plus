@@ -344,6 +344,11 @@ async function editor_setup() {
             )
         }
     );
+
+    document.getElementById("back-up-to-file").addEventListener(
+        "click",
+        back_up_map_to_file_listener
+    );
     
     document.getElementById("save-map").addEventListener(
         "click",
@@ -891,8 +896,7 @@ function add_target(data) {
     document.getElementById("targets-modal").append(node);
 }
 
-
-async function save_map(should_upload) {
+function map_data_JSON_compatible() {
     const target_nodes = document.getElementById("targets-modal").querySelectorAll(".target-div");
     const upload_targets = Array.from(target_nodes.values()).map(
         (node) => ({
@@ -906,17 +910,66 @@ async function save_map(should_upload) {
             highlighted: node.querySelector(".target-highlighted").checked
         })
     );
-    const locs_array = Array.from(locs.values());
 
-    browser.storage.local.set(
-        {
-            [local_ID]: {
-                locs: locs_array,
-                locs_extras: Array.from(locs_extras.values()),
-                upload_targets
-            }
+    return {
+        locs: Array.from(locs.values()),
+        locs_extras: Array.from(locs_extras.values()),
+        upload_targets
+    }
+}
+
+function back_up_map_to_file_listener(event) {
+    const backup_blob = new Blob(
+        [JSON.stringify(map_data_JSON_compatible())],
+        { type: "text/plain" }
+    );
+
+    const backup_URL = URL.createObjectURL(backup_blob);
+
+    browser.storage.local.get("index").then(
+        (items) => {
+            browser.downloads.download({
+                url: backup_URL,
+                filename: `${
+                    items.index.find(
+                        (map_element) => map_element.id == local_ID
+                    ).name
+                } backup ${
+                    (new Date()).toLocaleString("sv").replaceAll(':', '.')
+                }.json`
+            }).then(
+                (id) => {
+                    function revoke_backup_blob_URL(downloadDelta) {
+                        if(
+                            downloadDelta.id == id
+                            && downloadDelta.state.current == "complete"
+                        ) {
+                            browser.downloads.onChanged.removeListener(
+                                revoke_backup_blob_URL
+                            );
+                            URL.revokeObjectURL(backup_URL);
+                        }
+                    }
+        
+                    browser.downloads.onChanged.addListener(
+                        revoke_backup_blob_URL
+                    );
+                },
+        
+                (failure_reason) => {
+                    console.error(failure_reason);
+                    URL.revokeObjectURL(backup_URL);
+                }
+            )
         }
-    ).then(
+    )
+}
+
+async function save_map(should_upload) {
+
+    const map_data = map_data_JSON_compatible();
+
+    browser.storage.local.set({ [local_ID]: map_data }).then(
         () => {
             locs_added = new Map();
             locs_modified = new Map();
@@ -925,12 +978,12 @@ async function save_map(should_upload) {
             update_count_of_changes();
 
             if(should_upload) {
-                for(const target of upload_targets) {
+                for(const target of map_data.upload_targets) {
 
                     const body_object = (
                         ({name, regions, description, avatar, published, highlighted}) => ({
                             name,
-                            customCoordinates: locs_array,
+                            customCoordinates: map_data.locs,
                             regions,
                             description,
                             avatar,
