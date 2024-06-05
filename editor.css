@@ -182,6 +182,28 @@ body {
     height: var(--reticle-length);
 }
 
+#pano-blocked-submodal {
+    z-index: 1000;
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: grid;
+    place-items: center;
+}
+
+#pano-blocked-submodal > div {
+    display: grid;
+    place-items: center;
+}
+
+#pano-blocked-submodal > div > div {
+    color: hsla(0,0%,100%,.6);
+}
+
+#pano-blocked-shame-line {
+    font-size: 8pt;
+}
+
 #right {
     position: absolute;
     top: 0;

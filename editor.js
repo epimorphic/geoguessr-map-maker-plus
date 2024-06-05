@@ -7,6 +7,28 @@ let locs, locs_extras;
 let active_loc_key, active_marker;
 let next_key;
 let locs_added = new Map(), locs_modified = new Map(), deleted_count = 0;
+let badcam_block_override = null;
+
+/* badcam list of shame */
+const pano_size_blacklist = new Map([
+    // "width x height" -> models
+    [ "2048 x 1024", "Ricoh Theta S, Ricoh Theta SC, Minolta MN360"],
+    [ "3840 x 1920", "Ricoh Theta SC2, Ricoh Theta V, Theta Z1"],
+    [ "5376 x 2688", "Ricoh Theta S, Ricoh Theta SC, Ricoh Theta SC2, Ricoh Theta V, ..."],
+    [ "5472 x 2736", "Samsung Gear 360"],
+    [ "5504 x 2752", "Ricoh Theta X"],
+    [ "5660 x 2830", "LG 360 Cam"],
+    [ "5760 x 2880", "GoPro MAX 360, Insta360 X3, Insta360 X4, YI 360"],
+    [ "5792 x 2896", "Samsung Gear 360"],
+    [ "5888 x 2944", "Insta360 ONE RS 1-inch, Insta360 X4"],
+    [ "5952 x 2976", "Insta360 X3"],
+    [ "6080 x 3040", "Insta360 ONE R, Insta360 ONE X, Insta360 ONE X2, Insta360 EVO"],
+    [ "6528 x 3264", "Insta360 ONE RS 1-inch"],
+    [ "6720 x 3360", "Ricoh Theta Z1 (JPEG)"],
+    [ "6912 x 3456", "Insta360 ONE, Xiaomi Mi"],
+    [ "7744 x 3872", "Nikon KeyMission 360"],
+    [ "7776 x 3888", "Samsung Gear 360"],
+]);
 
 /*
  * Maps API bootstrap loader
@@ -190,6 +212,8 @@ async function editor_setup() {
     pano.controls[google.maps.ControlPosition.BOTTOM_LEFT].push(
         pano_guide_toggle
     );
+
+    pano_div.append(document.getElementById("pano-blocked-submodal-stash").content.firstElementChild);
 
     // If pano ID changes 
     pano.addListener(
@@ -417,6 +441,8 @@ async function open_map(storage_key) {
 
 
 function create_loc_from_panoid(id) {
+    if(badcam_block_override != null) dismiss_pano_blocked_modal();
+
     if(id.length != 22 && id.length != 64) {
         /*
          * ID not directly usable; construct protobuf message and encode.
@@ -434,15 +460,53 @@ function create_loc_from_panoid(id) {
     );
 }
 
-function create_loc_from_map(e) {
+function create_loc_from_map(ev) {
+    if(badcam_block_override != null) dismiss_pano_blocked_modal();
+
     svs.getPanorama(
         {
-            location: e.latLng,
+            location: ev.latLng,
             preference: google.maps.StreetViewPreference.NEAREST
         }
     ).then(
-        create_loc_from_svs_response
+        (response) => {
+            const ws = response.data.tiles.worldSize;
+            // if(pano_size_blacklist.has(ws.width)) {
+            if(pano_size_blacklist.has(`${ws.width} x ${ws.height}`)) {
+                badcam_block(response);
+            }
+            else {
+                create_loc_from_svs_response(response);
+            }
+        }
     );
+}
+
+function badcam_block(response) {
+    close_loc();
+    const pano_blocked_submodal = document.getElementById("pano-blocked-submodal");
+    pano_blocked_submodal.querySelector("#pano-blocked-shame-line").textContent = `pano ID: ${response.data.location.pano}, uploader: ${response.data.copyright.slice(2)}`;
+    pano_blocked_submodal.hidden = false;
+
+    badcam_block_override = () => {
+        dismiss_pano_blocked_modal();
+        create_loc_from_svs_response(response);
+    };
+    
+    pano_blocked_submodal.querySelector("button").addEventListener(
+        "click",
+        badcam_block_override
+    );
+}
+
+function dismiss_pano_blocked_modal() {
+    const pano_blocked_submodal = document.getElementById("pano-blocked-submodal");
+    pano_blocked_submodal.hidden = true;
+    pano_blocked_submodal.querySelector("button").removeEventListener(
+        "click",
+        badcam_block_override
+    );
+    badcam_block_override = null;
 }
 
 function create_loc_from_svs_response(d, status, known_id = null) {
@@ -495,6 +559,8 @@ function create_marker(key, loc) {
 }
 
 function open_location(marker) {
+    if(badcam_block_override != null) dismiss_pano_blocked_modal();
+
     active_marker = marker;
     active_loc_key = marker.key;
     let loc = locs.get(active_loc_key);
@@ -731,14 +797,27 @@ function save_loc_listener(e) {
     e.target.disabled = false;
 }
 
+function close_loc() {
+    active_marker = null;
+    const time_machine_menu = document.getElementById("time-machine-temp");
+    time_machine_menu.disabled = true;
+
+    pano.setVisible(false);
+
+    time_machine_menu.innerHTML = "";
+    document.getElementById("panoid").value = "";
+    document.getElementById("lock-panoid").checked = false;
+    document.getElementById("pos-override").checked = false;
+    document.getElementById("set-lat").value = NaN;
+    document.getElementById("set-lng").value = NaN;
+}
+
 function delete_loc_listener(e) {
     e.target.disabled = true;
     document.getElementById("save-loc").disabled = true;
     document.getElementById("select-override").disabled = true;
     active_marker.setMap(null);
-    active_marker = null;
-    const time_machine_menu = document.getElementById("time-machine-temp");
-    time_machine_menu.disabled = true;
+    close_loc();
     
     locs.delete(active_loc_key);
     locs_extras.delete(active_loc_key);
@@ -753,15 +832,6 @@ function delete_loc_listener(e) {
         deleted_count++;
     }
     update_count_of_changes();
-    
-    pano.setVisible(false);
-    
-    time_machine_menu.innerHTML = "";
-    document.getElementById("panoid").value = "";
-    document.getElementById("lock-panoid").checked = false;
-    document.getElementById("pos-override").checked = false;
-    document.getElementById("set-lat").value = NaN;
-    document.getElementById("set-lng").value = NaN;
 }
 
 function open_import_modal(event) {

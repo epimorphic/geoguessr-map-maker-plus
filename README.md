@@ -13,6 +13,7 @@ You'll need to provide your own API key for the Google Maps JavaScript API. To s
 - Prevent location mutation by locking down the pano ID.
 - Correct the position of panoramas that don't match the map, by selecting the true (or at least a more accurate) location on the map.
     - In certain cases _\*cough\*_ where you want to correct the location using the satellite map but it's offset from the standard vector map, you can even independently move and overlay the two.
+- Automatically blocks panos that are unlikely to come from anything other than a low-quality camera, based on their size signatures (can be overridden).
 
 ## To do
 - [ ] Draw marker for current location on position override map
