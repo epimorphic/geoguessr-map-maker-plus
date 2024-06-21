@@ -28,6 +28,7 @@ const pano_size_blacklist = new Map([
     [ "6912 x 3456", "Insta360 ONE, Xiaomi Mi"],
     [ "7744 x 3872", "Nikon KeyMission 360"],
     [ "7776 x 3888", "Samsung Gear 360"],
+    [ "8444 x 4222", "張永翔 pointless custom upscale from 6080 x 3040"],
 ]);
 
 /*
