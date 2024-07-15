@@ -13,6 +13,7 @@ let badcam_block_override = null;
 const pano_size_blacklist = new Map([
     // "width x height" -> models
     [ "2048 x 1024", "Ricoh Theta S, Ricoh Theta SC, Minolta MN360"],
+    [ "3008 x 1504", "Insta360 Air, Insta360 ONE X"],
     [ "3840 x 1920", "Ricoh Theta SC2, Ricoh Theta V, Theta Z1"],
     [ "5376 x 2688", "Ricoh Theta S, Ricoh Theta SC, Ricoh Theta SC2, Ricoh Theta V, ..."],
     [ "5472 x 2736", "Samsung Gear 360"],
@@ -23,6 +24,7 @@ const pano_size_blacklist = new Map([
     [ "5888 x 2944", "Insta360 ONE RS 1-inch, Insta360 X4"],
     [ "5952 x 2976", "Insta360 X3"],
     [ "6080 x 3040", "Insta360 ONE R, Insta360 ONE X, Insta360 ONE X2, Insta360 EVO"],
+    [ "6240 x 3120", "Moto 360 Camera Mod"],
     [ "6528 x 3264", "Insta360 ONE RS 1-inch"],
     [ "6720 x 3360", "Ricoh Theta Z1 (JPEG)"],
     [ "6912 x 3456", "Insta360 ONE, Xiaomi Mi"],
