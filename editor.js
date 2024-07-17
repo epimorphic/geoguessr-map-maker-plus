@@ -1042,8 +1042,18 @@ async function save_map(should_upload) {
 
     const map_data = map_data_JSON_compatible();
 
+    const save_status_box = document.getElementById("save-status");
+    save_status_box.replaceChildren();
+
     browser.storage.local.set({ [local_ID]: map_data }).then(
         () => {
+            const status_ok_span_template = document.getElementById("status-ok-span-template").content;
+            save_status_box.append(
+                (new Date()).toLocaleTimeString('sv'),
+                status_ok_span_template.cloneNode(true),
+                "Local save was successful."
+            );
+
             locs_added = new Map();
             locs_modified = new Map();
             deleted_count = 0;
@@ -1051,7 +1061,11 @@ async function save_map(should_upload) {
             update_count_of_changes();
 
             if(should_upload) {
-                for(const target of map_data.upload_targets) {
+                const upload_targets = map_data.upload_targets;
+                const num_targets = upload_targets.length;
+
+                for(let i = 0; i < num_targets; ) {
+                    const target = upload_targets[i++];
 
                     const body_object = (
                         ({name, regions, description, avatar, published, highlighted}) => ({
@@ -1075,7 +1089,36 @@ async function save_map(should_upload) {
                                 'Content-Type': 'application/json'
                             }
                         }
-                    )
+                    ).then(
+                        (response) => {
+                            if(response.status == 200) {
+                                response.json().then(
+                                    (data) => {
+                                        save_status_box.append(
+                                            document.createElement('br'),
+                                            (new Date()).toLocaleTimeString('sv'),
+                                            status_ok_span_template.cloneNode(true),
+                                            `(${i} / ${num_targets}) "${data.name}" uploaded with ${data.customCoordinates.length} locations.`
+                                        );
+                                        save_status_box.scrollTop = save_status_box.scrollHeight;
+                                    }
+                                );
+                            }
+                            else {
+                                throw new Error(`Server responded with code ${response.status}.`);
+                            }
+                        }
+                    ).catch(
+                        (failture_reason) => {
+                            save_status_box.append(
+                                document.createElement('br'),
+                                (new Date()).toLocaleTimeString('sv'),
+                                document.getElementById("status-fail-span-template").content.cloneNode(true),
+                                `(${i} / ${num_targets}) "${target.name}" upload failed: ${failture_reason}`
+                            );
+                            console.log(failture_reason);
+                        }
+                    );
                 }
             }
         }

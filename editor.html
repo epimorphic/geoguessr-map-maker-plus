@@ -70,10 +70,12 @@
                     </div>
                     <div>
                         <button id="save-map"> Save map </button>
-                        <!-- <span id="save-status"></span> -->
                     </div>
                     <div>
                         <button id="save-upload-map"> Save map + Upload </button>
+                    </div>
+                    <div id="save-status">
+                        <span class="placeholder-text">Save status</span>
                     </div>
                     <div>
                         <button id="back-up-to-file"> Back up map data to a file </button>
@@ -249,6 +251,14 @@
                     <button> Add to map and open anyways </button>
                 </div>
             </div>
+        </template>
+
+        <template id="status-ok-span-template">
+            <span class="success"> [OK] </span>
+        </template>
+
+        <template id="status-fail-span-template">
+            <span class="failure"> [FAILED] </span>
         </template>
     </body>
 </html>
