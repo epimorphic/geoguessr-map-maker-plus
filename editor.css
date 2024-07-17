@@ -1,12 +1,91 @@
 body {
     margin: 0;
     height: 100vh;
-    background-color: #1a1a2e;
-    font-family: sans-serif;
+    --background-color: hsl(240, 10%, 7%);
+    /* --background-color: rgb(20, 19, 20); */
+    background-color: var(--background-color);
+    font-family: Roboto, sans-serif;
+    --button-vertical-padding: 2px;
 }
 
 [hidden=""], [hidden="hidden"] {
     display: none !important;
+}
+
+button {
+    background-color: hsla(0, 0%, 100%, 12%);
+    border-radius: calc(5.5pt + 1px);
+    border-width: 0;
+    color: hsla(0, 0%, 100%, 60%);
+    font-family: Roboto, sans-serif;
+    padding: var(--button-vertical-padding) calc(5.5pt + var(--button-vertical-padding));
+    margin: 2px 0px;
+}
+
+button:hover {
+    background-color: hsla(0, 0%, 100%, 20%);
+}
+
+button:active {
+    background-color: hsla(0, 0%, 100%, 25%);
+}
+
+button:disabled {
+    background-color: hsla(0, 0%, 100%, 5%);
+    color: hsla(0, 0%, 100%, 5%);
+}
+
+.gm-style-mtc-bbw .gm-style-mtc:not(:last-of-type) > button {
+    border-start-end-radius: 0px;
+    border-end-end-radius: 0px;
+}
+
+.gm-style-mtc-bbw .gm-style-mtc:not(:first-of-type) > button {
+    border-start-start-radius: 0px;
+    border-end-start-radius: 0px;
+}
+
+input, textarea {
+    background-color: hsla(0, 0%, 100%, 0%);
+    border-style: solid;
+    border-color: hsla(0, 0%, 100%, 10%);
+    border-radius: 3px;
+    color: hsla(0, 0%, 100%, 60%);
+    font-family: Roboto, sans-serif;
+    font-size: 10pt;
+}
+
+input:read-only, textarea:read-only {
+    background-color: hsla(0, 0%, 100%, 0);
+    color: hsla(0, 0%, 100%, 45%);
+}
+
+input:disabled, textarea:disabled {
+    background-color: hsla(0, 0%, 100%, 0);
+    border-color: hsla(0, 0%, 100%, 5%);
+    color: hsla(0, 0%, 100%, 10%);
+}
+
+select {
+    background-color: color-mix(in srgb, var(--background-color), white 10%);
+    border-color: hsla(0, 0%, 100%, 5%);
+    border-style: solid;
+    border-radius: 3px;
+    color: hsla(0, 0%, 100%, 60%);
+}
+
+select:hover:not(:disabled), select:focus {
+    border-color: hsla(0, 0%, 100%, 14%);
+}
+
+select:disabled {
+    background-color: var(--background-color);
+    color: hsla(0, 0%, 100%, 45%);
+    appearance: none;
+}
+
+input[type="checkbox"]:not(:checked) {
+    filter: invert(100%);
 }
 
 #maps-list {
@@ -51,8 +130,23 @@ body {
     padding: 10px;
 }
 
+.pano-control, .pano-control:hover, .pano-control:active {
+    /* background-color: rgb(34, 34, 34); */
+    background-color: rgb(0, 0, 0, 85%);
+    border-radius: 0;
+    padding: 3px 7px;
+}
+
 .pano-control {
-    
+    color: #b3b3b3;
+}
+
+.pano-control:hover {
+    color: #e6e6e6;
+}
+
+.pano-control:active {
+    color: #fff;
 }
 
 #guides {
@@ -209,6 +303,7 @@ body {
     top: 0;
     left: calc(100vh * 16 / 18);
     height: 100vh;
+    font-size: 11pt;
 }
 
 #right > div {
@@ -219,19 +314,32 @@ body {
 
 /*
     Using a lower-specificity selector to reduce the weight from 1-0-1 to
-    0-1-1, to prevent it from overriding the #count-* selectors below.
+    0-1-2, to prevent it from overriding the #count-* selectors below.
     Being a descendant of #right is more a class than an ID anyways.
 */
-div[id="right"] label, div[id="right"] span {
+div[id="right"] span {
     color: hsla(0,0%,100%,.6);
-    font-size: 11pt;
+}
+
+div[id="right"] label {
+    color: hsla(0, 0%, 100%, 45%);
 }
 
 #right input {
     text-overflow: ellipsis;
 }
 
-#mapID, #panoid {
+#right input[type="number"] {
+    -moz-appearance: textfield;
+}
+
+#right input[type="number"]::-webkit-outer-spin-button,
+#right input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+#panoid {
     font-family: monospace;
 }
 
@@ -245,15 +353,6 @@ div[id="right"] label, div[id="right"] span {
 
 #changes > .count-modified {
     color: rgba(218, 165, 32, .8);
-}
-
-#right input[type="number"] {
-    -moz-appearance: textfield;
-}
-#right input[type="number"]::-webkit-outer-spin-button,
-#right input[type="number"]::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
 }
 
 #modals {
