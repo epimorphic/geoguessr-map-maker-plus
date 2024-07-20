@@ -130,14 +130,16 @@ input[type="checkbox"]:not(:checked) {
     padding: 10px;
 }
 
-.pano-control, .pano-control:hover, .pano-control:active {
-    /* background-color: rgb(34, 34, 34); */
-    background-color: rgb(0, 0, 0, 85%);
-    border-radius: 0;
-    padding: 3px 7px;
+.pano-control,
+#pano .gm-fullscreen-control,
+#pano .gm-bundled-control-on-bottom > div > div:has(> button[title^="Zoom"]) {
+    /* background-color: rgba(34, 34, 34, 80%) !important; */
+    background-color: rgba(0, 0, 0, 70%) !important;
+    border-radius: 2px;
 }
 
 .pano-control {
+    padding: 3px 7px;
     color: #b3b3b3;
 }
 
