@@ -14,12 +14,15 @@ body {
 
 button {
     background-color: hsla(0, 0%, 100%, 12%);
-    border-radius: calc(5.5pt + 1px);
     border-width: 0;
     color: hsla(0, 0%, 100%, 60%);
     font-family: Roboto, sans-serif;
     padding: var(--button-vertical-padding) calc(5.5pt + var(--button-vertical-padding));
     margin: 2px 0px;
+}
+
+#right button, #modals button {
+    border-radius: calc(5.5pt + 1px);
 }
 
 button:hover {
@@ -33,16 +36,6 @@ button:active {
 button:disabled {
     background-color: hsla(0, 0%, 100%, 5%);
     color: hsla(0, 0%, 100%, 5%);
-}
-
-.gm-style-mtc-bbw .gm-style-mtc:not(:last-of-type) > button {
-    border-start-end-radius: 0px;
-    border-end-end-radius: 0px;
-}
-
-.gm-style-mtc-bbw .gm-style-mtc:not(:first-of-type) > button {
-    border-start-start-radius: 0px;
-    border-end-start-radius: 0px;
 }
 
 input, textarea, #save-status {
