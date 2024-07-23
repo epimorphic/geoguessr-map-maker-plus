@@ -123,6 +123,27 @@ input[type="checkbox"]:not(:checked) {
     padding: 10px;
 }
 
+#pano {
+    contain: strict;
+}
+
+/* level selector */
+#pano .gm-bundled-control-on-bottom > div:not([style*="compass"]):not(:has(> div > button[title^="Zoom"])) {
+    position: fixed !important;
+    left: auto !important;
+    right: 14px !important;
+    bottom: 217px;
+    top: auto !important;
+    max-height: calc(100% - 217px - 82px);
+    display: flex;
+    flex-direction: column;
+    justify-content: end;
+}
+
+#pano .gm-bundled-control-on-bottom > div:not([style*="compass"]):not(:has(> div > button[title^="Zoom"])) > button {
+    flex: 0 1 40px;
+}
+
 .pano-control,
 #pano .gm-fullscreen-control,
 #pano .gm-bundled-control-on-bottom > div > div:has(> button[title^="Zoom"]) {
