@@ -382,16 +382,13 @@ div[id="right"] label {
     font-family: monospace;
 }
 
-#modals {
-    display: grid;
-    place-items: center;
-    position: absolute;
-    top: 0;
-    left: 0;
-    height: 100%;
-    width: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
+dialog {
+    border: none;
     color: white;
+}
+
+#editor > dialog::backdrop {
+    background-color: rgba(0, 0, 0, 0.5);
 }
 
 #pos-override-modal {
@@ -424,7 +421,7 @@ div[id="right"] label {
     left: 10%;
 }
 
-#override-modal-cancel {
+#pos-override-modal button.modal-cancel {
     position: absolute;
     bottom: 90%;
     right: 10%;

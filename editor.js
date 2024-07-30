@@ -59,6 +59,8 @@ async function editor_setup() {
     await google.maps.importLibrary("maps");
     await google.maps.importLibrary("streetView");
 
+    let editor = document.getElementById("editor");
+
     map = new google.maps.Map(
         document.getElementById("map"),
         {
@@ -313,11 +315,6 @@ async function editor_setup() {
         override_layer_mix_listener
     );
     
-    document.getElementById("override-modal-cancel").addEventListener(
-        "click",
-        close_override_modal
-    );
-    
     document.getElementById("save-loc").addEventListener(
         "click",
         save_loc_listener
@@ -330,23 +327,33 @@ async function editor_setup() {
 
     document.getElementById("open-import-modal").addEventListener(
         "click",
-        open_import_modal
+        () => {
+            document.getElementById("import-modal").showModal();
+        }
     );
 
     document.getElementById("open-targets-modal").addEventListener(
         "click",
-        open_targets_modal
+        () => {
+            document.getElementById("targets-modal").showModal();
+        }
     );
 
-    document.getElementById("import-modal").querySelector("button.modal-cancel").addEventListener(
-        "click",
-        close_import_modal
-    );
+    for(const child of editor.children) {
+        if(child.tagName == "DIALOG") {
 
-    document.getElementById("targets-modal").querySelector("button.modal-cancel").addEventListener(
-        "click",
-        close_targets_modal
-    );
+            // don't trigger loc_paste_listener if modals are open
+            child.addEventListener(
+                "paste",
+                ev => ev.stopPropagation()
+            );
+
+            child.querySelector("button.modal-cancel").addEventListener(
+                "click",
+                close_ancestor_dialog
+            );
+        }
+    }
 
     document.getElementById("import-source-gg").addEventListener(
         "paste",
@@ -387,19 +394,12 @@ async function editor_setup() {
         save_upload_map_listener
     );
 
-    // don't trigger loc_paste_listener if modals are open
-    document.getElementById("modals").addEventListener(
-        "paste",
-        (event) => event.stopPropagation()
-    );
-
-    document.getElementById("editor").addEventListener(
+    editor.addEventListener(
         "paste",
         loc_paste_listener
     )
 
-    document.getElementById("editor").setup_finished = true;
-
+    editor.setup_finished = true;
 }
 
 async function open_map(storage_key) {
@@ -654,12 +654,9 @@ function loc_paste_listener(e) {
     }
 }
 
-function close_override_modal() {
-    document.getElementById("modals").hidden = true;
-    document.getElementById("pos-override-modal").hidden = true;
-}
-
 function open_override_popup_listener(e) {
+    const modal = document.getElementById("pos-override-modal");
+
     if(override_selection_map == null) {
         override_selection_map = new google.maps.Map(
             document.getElementById("override-popup-map"),
@@ -674,7 +671,7 @@ function open_override_popup_listener(e) {
         override_selection_map.addListener(
             "click",
             (e) => {
-                close_override_modal();
+                modal.close();
                 document.getElementById("set-lat").value = e.latLng.lat();
                 document.getElementById("set-lng").value = e.latLng.lng();
                 document.getElementById("pos-override").checked = true;
@@ -686,7 +683,7 @@ function open_override_popup_listener(e) {
         override_selection_map.setCenter(map.center);
         override_selection_map.setZoom(map.zoom);
     }
-    const modal = document.getElementById("pos-override-modal");
+
     modal.querySelector("#override-popup-init-underlay").disabled = false;
     modal.querySelector("#override-popup-swap").disabled = true;
     Object.assign(
@@ -702,8 +699,7 @@ function open_override_popup_listener(e) {
     undermap.className = "override-map-layer";
     modal.querySelector("#override-popup-map").className = "override-map-layer override-popup-foreground";
 
-    modal.hidden = false;
-    modal.parentElement.hidden = false;
+    modal.showModal();
 }
 
 function enable_underlay_listener(e) {
@@ -837,24 +833,11 @@ function delete_loc_listener(e) {
     update_count_of_changes();
 }
 
-function open_import_modal(event) {
-    document.getElementById("import-modal").hidden = false;
-    document.getElementById("modals").hidden = false;
-}
-
-function open_targets_modal(event) {
-    document.getElementById("targets-modal").hidden = false;
-    document.getElementById("modals").hidden = false;
-}
-
-function close_import_modal(event) {
-    document.getElementById("import-modal").hidden = true;
-    document.getElementById("modals").hidden = true;
-}
-
-function close_targets_modal(event) {
-    document.getElementById("targets-modal").hidden = true;
-    document.getElementById("modals").hidden = true;
+function close_ancestor_dialog(ev) {
+    let target = ev.target.parentElement;
+    while(target.tagName != "DIALOG")
+        target = target.parentElement;
+    target.close();
 }
 
 function import_locs_from_gg(event, map_ID, add_as_target) {
@@ -948,7 +931,7 @@ function import_locs_from_gg(event, map_ID, add_as_target) {
         
     ).finally(
         () => {
-            close_import_modal();
+            close_ancestor_dialog(event);
             event.target.disabled = false;
         }
     );
