@@ -9,7 +9,7 @@ You'll need to provide your own API key for the Google Maps JavaScript API. To s
 ## Features
 - Edit your collection of locations as usual and load/save directly from/to GeoGuessr.
     - Additional support for adding a location by pasting the URL of a Google Maps page that has the desired pano open (full-length links only for now), or a pano ID. Useful for panos hidden by another that has the same exact LatLng, or whose blue circle just doesn't respond to clicks.
-- Travel through time and select the best panorama taken at the location, just like on Google Maps.
+- Compare panoramas captured across time at a location and select your favorite.
 - Prevent location mutation by locking down the pano ID.
 - Correct the position of panoramas that don't match the map, by selecting the true (or at least a more accurate) location on the map.
     - In certain cases _\*cough\*_ where you want to correct the location using the satellite map but it's offset from the standard vector map, you can even independently move and overlay the two.
