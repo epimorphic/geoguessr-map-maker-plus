@@ -487,8 +487,9 @@ function create_loc_from_map(ev) {
 
 function badcam_block(response) {
     close_loc();
+    const data = response.data;
     const pano_blocked_submodal = document.getElementById("pano-blocked-submodal");
-    pano_blocked_submodal.querySelector("#pano-blocked-shame-line").textContent = `pano ID: ${response.data.location.pano}, uploader: ${response.data.copyright.slice(2)}`;
+    pano_blocked_submodal.querySelector("#pano-blocked-shame-line").textContent = `pano ID: ${data.location.pano}, uploader: ${data.copyright.slice(2)}, date: ${data.imageDate}`;
     pano_blocked_submodal.hidden = false;
 
     badcam_block_override = () => {

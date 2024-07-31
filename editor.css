@@ -308,6 +308,8 @@ input[type="checkbox"]:not(:checked) {
 
 #pano-blocked-submodal > div > div {
     color: hsla(0,0%,100%,.6);
+    text-align: center;
+    width: 80%
 }
 
 #pano-blocked-shame-line {
