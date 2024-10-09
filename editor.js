@@ -460,8 +460,8 @@ function create_loc_from_panoid(id) {
         id = btoa("\u0008\u000a\u0012" + String.fromCharCode(id.length) + id);
     }
     svs.getPanoramaById(id).then(
-        (d, status) => {
-            create_loc_from_svs_response(d, status, id);
+        (resp) => {
+            create_loc_from_svs_response(resp, true);
         }
     );
 }
@@ -516,7 +516,7 @@ function dismiss_pano_blocked_modal() {
     badcam_block_override = null;
 }
 
-function create_loc_from_svs_response(d, status, known_id = null) {
+function create_loc_from_svs_response(d, from_id = false) {
     if(d != null) {
         const retrieved_loc = d.data.location;
         const latLng = retrieved_loc.latLng;
@@ -524,23 +524,41 @@ function create_loc_from_svs_response(d, status, known_id = null) {
         const constructed_loc = {
             lat: latLng.lat(),
             lng: latLng.lng(),
-            panoId: known_id,
+            panoId: null,
             heading: 0,
             pitch: 0,
             zoom: 0
         };
 
+        const extras = {
+            lat: latLng.lat(),
+            lng: latLng.lng(),
+            pos_override: false,
+            pano_on_last_save: retrieved_loc.pano
+        }
+
+        /*
+         * Set panoId if (1) created by paste, or (2) is user-uploaded.
+
+         * Locking down the panoId in case (2) is desirable because calling
+         * svs.getPanoramaByLocation at a blue circle sometimes returns a 
+         * pano at a different latLng, and calling setPosition at that latLng
+         * sometimes opens a second, different pano. This made the initial pano
+         * undiscoverable. To make the matter worse, the behavior occasionally
+         * allowed bad panos to bypass the blacklist check because only the
+         * initial pano was checked.
+         * 
+         * I'm limiting (2) to user-uploaded panos for now because Google panos
+         * are unstable, and because I haven't noticed any badcam switcheroo
+         * originating from a Google pano yet.
+         */
+        if(retrieved_loc.pano.length > 22 || from_id) {
+            constructed_loc.panoId = retrieved_loc.pano;
+        }
+
         const key = next_key++;
         locs.set(key, constructed_loc);
-        locs_extras.set(
-            key,
-            {
-                lat: latLng.lat(),
-                lng: latLng.lng(),
-                pos_override: false,
-                pano_on_last_save: retrieved_loc.pano
-            }
-        );
+        locs_extras.set(key, extras);
         locs_added.set(key, null);
         document.getElementById("count").textContent = `${locs.size}`;
         update_count_of_changes();
