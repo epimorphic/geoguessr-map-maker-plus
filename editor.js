@@ -71,6 +71,7 @@ async function editor_setup() {
         {
             center: { lat: 0, lng: 0 },
             zoom: 1,
+            tilt: 0,
             draggableCursor: "crosshair",
             streetViewControl: false,
             clickableIcons: false,
@@ -687,6 +688,7 @@ function open_override_popup_listener(e) {
             {
                 center: map.center,
                 zoom: map.zoom,
+                tilt: 0,
                 draggableCursor: "crosshair",
                 streetViewControl: false,
                 clickableIcons: false
@@ -738,6 +740,7 @@ function enable_underlay_listener(e) {
             {
                 center: override_selection_map.center,
                 zoom: override_selection_map.zoom,
+                tilt: 0,
                 streetViewControl: false,
                 clickableIcons: false
             }
