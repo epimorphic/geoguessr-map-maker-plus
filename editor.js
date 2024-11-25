@@ -9,35 +9,6 @@ let next_key;
 let locs_added = new Map(), locs_modified = new Map(), deleted_count = 0;
 let badcam_block_override = null;
 
-/* badcam list of shame */
-const pano_size_blacklist = new Map([
-    // "width x height" -> models
-    [ "2048 x 1024", "Ricoh Theta S, Ricoh Theta SC, Minolta MN360"],
-    [ "3008 x 1504", "Insta360 Air, Insta360 ONE X"],
-    [ "3840 x 1920", "Ricoh Theta SC2, Ricoh Theta V, Theta Z1"],
-    [ "5376 x 2688", "Ricoh Theta S, Ricoh Theta SC, Ricoh Theta SC2, Ricoh Theta V, ..."],
-    [ "5472 x 2736", "Samsung Gear 360"],
-    [ "5504 x 2752", "Ricoh Theta X"],
-    [ "5640 x 2820", "Garmin VIRB (vertically stretched to 2:1 from 5640 x 2816)"],
-    [ "5660 x 2830", "LG 360 Cam"],
-    [ "5760 x 2880", "GoPro MAX 360, Insta360 X3, Insta360 X4, YI 360"],
-    [ "5792 x 2896", "Samsung Gear 360"],
-    [ "5888 x 2944", "Insta360 ONE RS 1-inch, Insta360 X4"],
-    [ "5952 x 2976", "Insta360 X3"],
-    [ "6080 x 3040", "Insta360 ONE R, Insta360 ONE X, Insta360 ONE X2, Insta360 EVO"],
-    [ "6240 x 3120", "Moto 360 Camera Mod"],
-    [ "6272 x 3136", "Insta360 Nano S"],
-    [ "6528 x 3264", "Insta360 ONE RS 1-inch"],
-    [ "6720 x 3360", "Ricoh Theta Z1 (JPEG)"],
-    [ "6912 x 3456", "Insta360 ONE, Xiaomi Mi"],
-    [ "7200 x 3600", "Samsung Gear 360"],
-    [ "7744 x 3872", "Nikon KeyMission 360"],
-    [ "7776 x 3888", "Samsung Gear 360"],
-    [ "8444 x 4222", "張永翔 pointless custom upscale from 6080 x 3040"],
-    ["12160 x 6080", "Gregair 2x upscale from 6080 x 3040"],
-    ["13056 x 6528", "Gregair 2x upscale from 6528 x 3264"],
-]);
-
 /*
  * Maps API bootstrap loader
  * https://developers.google.com/maps/documentation/javascript/load-maps-js-api
