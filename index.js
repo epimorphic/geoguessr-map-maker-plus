@@ -34,6 +34,7 @@ function create_map_li(index_element) {
     b.addEventListener(
         "click",
         (event) => {
+            document.getElementById("main-menu").hidden = true;
             open_map(event.target.parentElement.mapID);
         }
     );
