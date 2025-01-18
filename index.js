@@ -115,3 +115,24 @@ function pass_object_to_filesystem_as(obj, filename) {
         }
     )
 }
+
+function dump_all_to_file() {
+    browser.storage.local.get("index").then(
+        (indexResponse) => {
+            const index = indexResponse.index;
+            browser.storage.local.get(
+                index.map(item => item.id)
+            ).then(
+                (mapsData) => {
+                    mapsData.index = index;
+                    pass_object_to_filesystem_as(
+                        mapsData, 
+                        `GGMMP dump ${
+                            (new Date()).toLocaleString("sv").replaceAll(':', '.')
+                        }.json`
+                    );
+                }
+            )
+        }
+    )
+}
