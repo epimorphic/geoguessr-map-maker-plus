@@ -81,3 +81,37 @@ function new_map() {
         )
     }
 }
+
+function pass_object_to_filesystem_as(obj, filename) {
+    const json_blob = new Blob(
+        [JSON.stringify(obj)],
+        { type: "text/plain" }
+    );
+
+    const url = URL.createObjectURL(json_blob);
+
+    browser.downloads.download({url, filename}).then(
+        (id) => {
+            function revoke_this_url_on_complete(downloadDelta) {
+                if(
+                    downloadDelta.id == id
+                    && downloadDelta.state.current == "complete"
+                ) {
+                    browser.downloads.onChanged.removeListener(
+                        revoke_this_url_on_complete
+                    );
+                    URL.revokeObjectURL(url);
+                }
+            }
+
+            browser.downloads.onChanged.addListener(
+                revoke_this_url_on_complete
+            );
+        },
+
+        (failure_reason) => {
+            console.error(failure_reason);
+            URL.revokeObjectURL(url);
+        }
+    )
+}

@@ -973,48 +973,18 @@ function map_data_JSON_compatible() {
 }
 
 function back_up_map_to_file_listener(event) {
-    const backup_blob = new Blob(
-        [JSON.stringify(map_data_JSON_compatible())],
-        { type: "text/plain" }
-    );
-
-    const backup_URL = URL.createObjectURL(backup_blob);
-
     browser.storage.local.get("index").then(
         (items) => {
-            browser.downloads.download({
-                url: backup_URL,
-                filename: `${
+            pass_object_to_filesystem_as(
+                map_data_JSON_compatible(),
+                `${
                     items.index.find(
                         (map_element) => map_element.id == local_ID
                     ).name
                 } backup ${
                     (new Date()).toLocaleString("sv").replaceAll(':', '.')
                 }.json`
-            }).then(
-                (id) => {
-                    function revoke_backup_blob_URL(downloadDelta) {
-                        if(
-                            downloadDelta.id == id
-                            && downloadDelta.state.current == "complete"
-                        ) {
-                            browser.downloads.onChanged.removeListener(
-                                revoke_backup_blob_URL
-                            );
-                            URL.revokeObjectURL(backup_URL);
-                        }
-                    }
-        
-                    browser.downloads.onChanged.addListener(
-                        revoke_backup_blob_URL
-                    );
-                },
-        
-                (failure_reason) => {
-                    console.error(failure_reason);
-                    URL.revokeObjectURL(backup_URL);
-                }
-            )
+            );
         }
     )
 }
