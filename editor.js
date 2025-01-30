@@ -619,7 +619,7 @@ function update_count_of_changes() {
         h += `<span class="count-deleted">−${deleted_count}</span> `;
     }
     if(locs_modified.size > 0) {
-        h += `<span class="count-modified">🗘${locs_modified.size}</span>`;
+        h += `<span class="count-modified">⟳${locs_modified.size}</span>`;
     }
     if(h == "") {
         h = "no changes";
