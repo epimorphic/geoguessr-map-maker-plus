@@ -10,6 +10,24 @@ let locs_added = new Map(), locs_modified = new Map(), deleted_count = 0;
 let badcam_block_override = null;
 
 /*
+ * Workaround for Google "falling back" to slower rendering mode for API Street View on Linux + Firefox combination
+ * https://reanna.neocities.org/blog/street-view-linux-firefox/
+ */
+
+let ua = navigator.userAgent;
+if (ua.includes("Linux") && ua.includes("Firefox")) {
+    ua = ua.replace("Linux", "GNU/L");
+    Object.defineProperty(
+        navigator,
+        'userAgent',
+        {
+            get: () => { return ua; },
+            configurable: true
+        }
+    )
+}
+
+/*
  * Maps API bootstrap loader
  * https://developers.google.com/maps/documentation/javascript/load-maps-js-api
  */
