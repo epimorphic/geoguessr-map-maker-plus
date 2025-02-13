@@ -979,7 +979,7 @@ function map_data_JSON_compatible() {
             description: node.querySelector(".target-description").value,
             avatar:      JSON.parse(node.querySelector(".target-avatar").value),
             published:   node.querySelector(".target-published").checked,
-            highlighted: node.querySelector(".target-highlighted").checked
+            highlighted: node.querySelector(".target-highlighted").checked,
         })
     );
 
@@ -1044,7 +1044,7 @@ async function save_map(should_upload) {
                             description,
                             avatar,
                             published,
-                            highlighted
+                            highlighted,
                         })
                     )(target);
 
