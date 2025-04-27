@@ -860,6 +860,11 @@ function close_ancestor_dialog(ev) {
 function import_locs_from_gg(event, map_ID, add_as_target) {
     event.target.disabled = true;
 
+    /*
+     * Endpoint https://www.geoguessr.com/api/v4/user-maps/drafts/${map_ID}
+     * returns unrelated map data (including 5 locations in Odense?) if draft
+     * isn't initialized? (2025-04-26)
+     */
     fetch(
         `https://www.geoguessr.com/api/v3/profiles/maps/${map_ID}`,
         {
@@ -961,10 +966,10 @@ function add_target(data) {
     node.querySelector(".target-map-id").value = data.id;
     node.querySelector(".target-name").value = data.name;
     node.querySelector(".target-description").value = data.description;
-    node.querySelector(".target-regions").value = JSON.stringify(data.regions);
     node.querySelector(".target-avatar").value = JSON.stringify(data.avatar);
     node.querySelector(".target-published").checked = data.published;
     node.querySelector(".target-highlighted").checked = data.highlighted;
+    node.querySelector(".target-tags").value = data.tags ? JSON.stringify(data.tags) : "[]";
 
     document.getElementById("targets-modal").append(node);
 }
@@ -976,11 +981,12 @@ function map_data_JSON_compatible() {
             id:          node.querySelector(".target-map-id").value,
             name:        node.querySelector(".target-name").value,
             // customCoordinates: null,
-            regions:     JSON.parse(node.querySelector(".target-regions").value),
+            regions:     [],
             description: node.querySelector(".target-description").value,
             avatar:      JSON.parse(node.querySelector(".target-avatar").value),
             published:   node.querySelector(".target-published").checked,
             highlighted: node.querySelector(".target-highlighted").checked,
+            tags:        JSON.parse(node.querySelector(".target-tags").value),
         })
     );
 
@@ -1016,83 +1022,217 @@ async function save_map(should_upload) {
     save_status_box.replaceChildren();
 
     browser.storage.local.set({ [local_ID]: map_data }).then(
-        () => {
-            const status_ok_span_template = document.getElementById("status-ok-span-template").content;
-            save_status_box.append(
-                (new Date()).toLocaleTimeString('sv'),
-                status_ok_span_template.cloneNode(true),
-                "Local save was successful."
-            );
+        after_local_save
+    );
+    
+    async function after_local_save() {
+        add_save_status(true, "Local save was successful.");
 
-            locs_added = new Map();
-            locs_modified = new Map();
-            deleted_count = 0;
-            
-            update_count_of_changes();
+        locs_added = new Map();
+        locs_modified = new Map();
+        deleted_count = 0;
+        
+        update_count_of_changes();
 
-            if(should_upload) {
-                const upload_targets = map_data.upload_targets;
-                const num_targets = upload_targets.length;
+        if(should_upload) {
+            const upload_targets = map_data.upload_targets;
+            const num_targets = upload_targets.length;
 
-                for(let i = 0; i < num_targets; ) {
-                    const target = upload_targets[i++];
+            for(let i = 0; i < num_targets; ) {
+                const target = upload_targets[i++];
 
-                    const body_object = (
-                        ({name, regions, description, avatar, published, highlighted}) => ({
-                            name,
-                            customCoordinates: map_data.locs,
-                            regions,
-                            description,
-                            avatar,
-                            published,
-                            highlighted,
-                        })
-                    )(target);
+                const body_object = (
+                    ({name, regions, description, avatar, published, highlighted, tags}) => ({
+                        name,
+                        customCoordinates: map_data.locs,
+                        regions,
+                        description,
+                        avatar,
+                        published,
+                        highlighted,
+                        tags,
+                    })
+                )(target);
 
-                    fetch(
-                        `https://www.geoguessr.com/api/v3/profiles/maps/${target.id}`,
-                        {
-                            method: 'POST',
-                            body: JSON.stringify(body_object),
-                            credentials: 'include',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            }
+                /*
+                 * Quick and dirty way to deal with the version number requirement
+                 * introduced in early 2025.
+                 * 
+                 * Version number in the upload request must be exactly 1 more
+                 * than the one for the draft stored on Geoguessr's servers.
+                 * 
+                 * TODO: Store version number locally so that we can avoid
+                 *       re-downloading the entire map data on each save.
+                 */
+                let version_on_GG;
+                await fetch(
+                    `https://www.geoguessr.com/api/v4/user-maps/drafts/${target.id}`,
+                    {
+                        method: 'GET',
+                        credentials: 'include'
+                    }
+                ).then(
+                    (response) => {
+                        if(response.status !== 200) {
+                            throw new Error(`Unexpected status code ${response.status}`)
                         }
-                    ).then(
-                        (response) => {
-                            if(response.status == 200) {
-                                response.json().then(
-                                    (data) => {
-                                        save_status_box.append(
-                                            document.createElement('br'),
-                                            (new Date()).toLocaleTimeString('sv'),
-                                            status_ok_span_template.cloneNode(true),
-                                            `(${i} / ${num_targets}) "${data.name}" uploaded with ${data.customCoordinates.length} locations.`
-                                        );
-                                        save_status_box.scrollTop = save_status_box.scrollHeight;
+                        return response.json();
+                    }
+                ).then(
+                    (data) => {
+                        version_on_GG = data.version;
+                    }
+                ).catch(
+                    (failure_reason) => {
+                        add_save_status(
+                            false,
+                            `(${i} / ${num_targets}) "${target.name}": Failed to fetch version number from Geoguessr. ${failure_reason}`
+                        )
+                    }
+                );
+                if(typeof(version_on_GG) != "number") {
+                    continue;
+                }
+                body_object.version = version_on_GG + 1;
+
+                fetch(
+                    `https://www.geoguessr.com/api/v4/user-maps/drafts/${target.id}`,
+                    {
+                        method: 'PUT',
+                        body: JSON.stringify(body_object),
+                        credentials: 'include',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    }
+                ).then(
+                    async (drafts_response) => {
+                        if(drafts_response.status == 200) {
+                            /*
+                             * Bug: Toggling off the published / publicly visible
+                             *      checkbox and uploading fails to unpublish map,
+                             *      as the v4 API endpoint ignores the `published`
+                             *      property.
+                             */
+
+                            if(target.published) {
+                                fetch(
+                                    `https://www.geoguessr.com/api/v4/user-maps/drafts/${target.id}/publish`,
+                                    {
+                                        method: 'PUT',
+                                        credentials: 'include',
                                     }
-                                );
+                                ).then(
+                                    (publish_response) => {
+                                        if(publish_response.status == 200) {
+                                            add_save_status(
+                                                true,
+                                                `(${i} / ${num_targets}) "${target.name}" uploaded with ${body_object.customCoordinates.length} locations.`
+                                            );
+                                        }
+                                        else {
+                                            throw new Error(`Unexpected status code ${publish_response.status}`);
+                                        }
+                                    }
+                                ).catch(
+                                    (failure_reason) => {
+                                        add_save_status(
+                                            false,
+                                            `(${i} / ${num_targets}) "${target.name}" draft uploaded with ${body_object.customCoordinates.length} locations, but publish failed. ${failure_reason}`
+                                        );
+                                    }
+                                )
                             }
                             else {
-                                throw new Error(`Server responded with code ${response.status}.`);
+                                add_save_status(
+                                    true,
+                                    `(${i} / ${num_targets}) "${target.name}" uploaded with ${body_object.customCoordinates.length} locations.`
+                                );
                             }
                         }
-                    ).catch(
-                        (failture_reason) => {
-                            save_status_box.append(
-                                document.createElement('br'),
-                                (new Date()).toLocaleTimeString('sv'),
-                                document.getElementById("status-fail-span-template").content.cloneNode(true),
-                                `(${i} / ${num_targets}) "${target.name}" upload failed: ${failture_reason}`
-                            );
-                            console.log(failture_reason);
+                        else {
+                            let err;
+                            try{
+                                await drafts_response.json().then(
+                                    (error_obj) => {
+                                        err = new Error(
+                                            `${error_obj.error}: ${error_obj.message} (response code ${drafts_response.status})`
+                                        );
+                                    }
+                                )
+                            }
+                            catch{
+                                err = new Error(
+                                    `Server responded with code ${drafts_response.status}.`
+                                );
+                            }
+                            throw err;
                         }
-                    );
-                }
+                    }
+                ).catch(
+                    (failure_reason) => {
+                        add_save_status(
+                            false,
+                            `(${i} / ${num_targets}) "${target.name}" upload failed: ${failure_reason}`
+                        );
+                    }
+                );
+
+                // fetch(
+                //     `https://www.geoguessr.com/api/v3/profiles/maps/${target.id}`,
+                //     {
+                //         method: 'POST',
+                //         body: JSON.stringify(body_object),
+                //         credentials: 'include',
+                //         headers: {
+                //             'Content-Type': 'application/json'
+                //         }
+                //     }
+                // ).then(
+                //     (response) => {
+                //         if(response.status == 200) {
+                //             response.json().then(
+                //                 (data) => {
+                //                     save_status_box.append(
+                //                         document.createElement('br'),
+                //                         (new Date()).toLocaleTimeString('sv'),
+                //                         status_ok_span_template.cloneNode(true),
+                //                         `(${i} / ${num_targets}) "${data.name}" uploaded with ${data.customCoordinates.length} locations.`
+                //                     );
+                //                     save_status_box.scrollTop = save_status_box.scrollHeight;
+                //                 }
+                //             );
+                //         }
+                //         else {
+                //             throw new Error(`Server responded with code ${response.status}.`);
+                //         }
+                //     }
+                // ).catch(
+                //     (failture_reason) => {
+                //         save_status_box.append(
+                //             document.createElement('br'),
+                //             (new Date()).toLocaleTimeString('sv'),
+                //             document.getElementById("status-fail-span-template").content.cloneNode(true),
+                //             `(${i} / ${num_targets}) "${target.name}" upload failed: ${failture_reason}`
+                //         );
+                //         console.log(failture_reason);
+                //     }
+                // );
             }
         }
-    );
+    }
+
+    function add_save_status(successful, message) {
+        if(save_status_box.hasChildNodes()) {
+            save_status_box.append(document.createElement('br'));
+        }
+        save_status_box.append(
+            (new Date()).toLocaleTimeString('sv'),
+            document.getElementById(successful ? "status-ok-span-template" : "status-fail-span-template").content.cloneNode(true),
+            message
+        );
+        save_status_box.scrollTop = save_status_box.scrollHeight;
+    }
 }
 
 
