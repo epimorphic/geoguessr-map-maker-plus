@@ -439,12 +439,13 @@ async function open_map(storage_key) {
 
 
 
-function create_loc_from_panoid(id) {
+function create_loc_from_panoid(id, needs_encode) {
     if(badcam_block_override != null) dismiss_pano_blocked_modal();
 
-    if(id.length != 22 && id.length != 64) {
+    // if(id.length != 22 && id.length != 64) {
+    if(needs_encode) {
         /*
-         * ID not directly usable; construct protobuf message and encode.
+         * Construct protobuf message and encode.
          * Byte 0: specifies field representing type of pano
          * Byte 1: code for type of pano, in this case a user-uploaded photosphere
          * Byte 2: specifies field for ID string
@@ -653,17 +654,51 @@ function loc_paste_listener(e) {
             let u = new URL(s);
             // google.*
             if(/\bgoogle(?:\.\w{2,3}){1,2}$/.test(u.hostname) && u.pathname.startsWith("/maps/")) {
-                // look between !1s and the next !
-                // 22 (official), or 44 or 43 (unofficial) chars
-                create_loc_from_panoid(/(?<=!1s)[\w-]{22}(?:[\w-]{21}[\w-]?)??(?=!)/.exec(u.pathname)[0]);
+                /* 
+                   Data keys:
+                   !1s - Some form of pano ID
+                   !2e - Pano type?
+                         Possible values:
+                         * 0  - Google?
+                         * 10 - User uploaded?
+                 */
+                const vals = /!1s([\w-]*)!2e(\d+)/.exec(u.pathname);
+                const pano_type = parseInt(vals[2]);
+                if(pano_type == 0) {
+                    create_loc_from_panoid(vals[1], false);
+                }
+                else if(pano_type == 10) {
+                    create_loc_from_panoid(vals[1], true);
+                }
+                else {
+                    throw new Error(`Unexpected pano type ${pano_type} in URL ${u.href}`);
+                }
             }
         }
         else {
+            /*
+                Google panos have 22-character pano IDs.
+                
+                User-uploaded ones are encoded using a variant of base64-url and
+                start with btoa("\u0008\u000A\u0012") = "CAoS". The charater set
+                contains \w = [A-Za-z0-9_] and '-', plus at least two other
+                characters used for padding. The known allowed padding conventions
+                are:
+
+                * Pad with '.', preferred by Google and used in its server responses
+                * Pad with '=', the JavaScript and general standard
+                * No padding
+                
+                With padding, base64-encoded strings always have length 0 (mod 4).
+                Without padding, the length could also be 2 or 3 (mod 4).
+             */
             if(
-                (s.length == 22 || s.length == 64 && s.startsWith("CAoS") && s.slice(6,13) == "FGMVFpc")
-                && !(/[^\w-=]/.test(s))
+                (s.length == 22 || s.startsWith("CAoS") && s.length % 4 != 1)
+                && !(/[^\w-\.=]/.test(s))
+                // (s.length == 22 || s.length == 64 && s.startsWith("CAoS") && s.slice(6,13) == "FGMVFpc")
+                // && !(/[^\w-=]/.test(s))
             ) {
-                create_loc_from_panoid(s);
+                create_loc_from_panoid(s, false);
             }
         }
     }
