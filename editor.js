@@ -532,23 +532,22 @@ function create_loc_from_svs_response(d, from_id = false) {
         }
 
         /*
-         * Set panoId if (1) created by paste, or (2) is user-uploaded.
-
-         * Locking down the panoId in case (2) is desirable because calling
-         * svs.getPanoramaByLocation at a blue circle sometimes returns a 
-         * pano at a different latLng, and calling setPosition at that latLng
-         * sometimes opens a second, different pano. This made the initial pano
-         * undiscoverable. To make the matter worse, the behavior occasionally
-         * allowed bad panos to bypass the blacklist check because only the
-         * initial pano was checked.
+         * Locking down the panoId is desirable because calling
+         * svs.getPanoramaByLocation will return a pano at a some different
+         * latLng of some situation-dependent distance away, sometimes very
+         * close (especially the case for a working user-uploaded circle) but
+         * sometimes quite far (when it jumps to some other user-uploaded
+         * pano), and calling setPosition at that new latLng may open a second,
+         * different pano. This made the initial pano undiscoverable, and
+         * sometimes opened bad panos, bypassing the blacklist check, because
+         * only the initial pano is checked.
          * 
-         * I'm limiting (2) to user-uploaded panos for now because Google panos
-         * are unstable, and because I haven't noticed any badcam switcheroo
-         * originating from a Google pano yet.
+         * Contrary to my previous hopium, the switcheroo can happen regardless
+         * of whether the initial pano was uploaded by Google or a user.
          */
-        if(retrieved_loc.pano.length > 22 || from_id) {
-            constructed_loc.panoId = retrieved_loc.pano;
-        }
+        // if(retrieved_loc.pano.length > 22 || from_id) {
+        constructed_loc.panoId = retrieved_loc.pano;
+        // }
 
         const key = next_key++;
         locs.set(key, constructed_loc);
